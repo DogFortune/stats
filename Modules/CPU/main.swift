@@ -8,9 +8,10 @@
 
 import Cocoa
 import Kit
+import WidgetKit
 
-public struct CPU_Load: value_t, Codable {
-    var totalUsage: Double = 0
+public struct CPU_Load: Codable, RemoteType {
+    public var totalUsage: Double = 0
     var usagePerCore: [Double] = []
     var usageECores: Double? = nil
     var usagePCores: Double? = nil
@@ -19,10 +20,24 @@ public struct CPU_Load: value_t, Codable {
     var userLoad: Double = 0
     var idleLoad: Double = 0
     
-    public var widgetValue: Double {
-        get {
-            return self.totalUsage
+    public func remote() -> Data? {
+        var string = "1,1,\(self.totalUsage),\(self.usagePerCore.count),"
+        for c in self.usagePerCore {
+            string += "\(c),"
         }
+        string += "$"
+        return string.data(using: .utf8)
+    }
+}
+
+public struct CPU_Frequency: Codable, RemoteType {
+    var value: Double = 0
+    var eCore: Double = 0
+    var pCore: Double = 0
+    
+    public func remote() -> Data? {
+        let string = "1,1,\(self.value)$"
+        return string.data(using: .utf8)
     }
 }
 
@@ -36,6 +51,7 @@ public class CPU: Module {
     private let popupView: Popup
     private let settingsView: Settings
     private let portalView: Portal
+    private let notificationsView: Notifications
     
     private var loadReader: LoadReader? = nil
     private var processReader: ProcessReader? = nil
@@ -43,9 +59,6 @@ public class CPU: Module {
     private var frequencyReader: FrequencyReader? = nil
     private var limitReader: LimitReader? = nil
     private var averageReader: AverageReader? = nil
-    
-    private var notificationLevelState: Bool = false
-    private var notificationID: String? = nil
     
     private var usagePerCoreState: Bool {
         Store.shared.bool(key: "\(self.config.name)_usagePerCore", defaultValue: false)
@@ -56,63 +69,76 @@ public class CPU: Module {
     private var groupByClustersState: Bool {
         Store.shared.bool(key: "\(self.config.name)_clustersGroup", defaultValue: false)
     }
-    private var notificationLevel: String {
-        Store.shared.string(key: "\(self.config.name)_notificationLevel", defaultValue: "Disabled")
-    }
     private var systemColor: NSColor {
-        let color = Color.secondRed
+        let color = SColor.secondRed
         let key = Store.shared.string(key: "\(self.config.name)_systemColor", defaultValue: color.key)
-        if let c = Color.fromString(key).additional as? NSColor {
+        if let c = SColor.fromString(key).additional as? NSColor {
             return c
         }
         return color.additional as! NSColor
     }
     private var userColor: NSColor {
-        let color = Color.secondBlue
+        let color = SColor.secondBlue
         let key = Store.shared.string(key: "\(self.config.name)_userColor", defaultValue: color.key)
-        if let c = Color.fromString(key).additional as? NSColor {
+        if let c = SColor.fromString(key).additional as? NSColor {
             return c
         }
         return color.additional as! NSColor
     }
     
     private var eCoreColor: NSColor {
-        let color = Color.teal
+        let color = SColor.teal
         let key = Store.shared.string(key: "\(self.config.name)_eCoresColor", defaultValue: color.key)
-        if let c = Color.fromString(key).additional as? NSColor {
+        if let c = SColor.fromString(key).additional as? NSColor {
             return c
         }
         return color.additional as! NSColor
     }
     private var pCoreColor: NSColor {
-        let color = Color.secondBlue
+        let color = SColor.indigo
         let key = Store.shared.string(key: "\(self.config.name)_pCoresColor", defaultValue: color.key)
-        if let c = Color.fromString(key).additional as? NSColor {
+        if let c = SColor.fromString(key).additional as? NSColor {
             return c
         }
         return color.additional as! NSColor
     }
     
     public init() {
-        self.settingsView = Settings("CPU")
-        self.popupView = Popup("CPU")
-        self.portalView = Portal("CPU")
+        self.settingsView = Settings(.CPU)
+        self.popupView = Popup(.CPU)
+        self.portalView = Portal(.CPU)
+        self.notificationsView = Notifications(.CPU)
         
         super.init(
+            moduleType: .CPU,
             popup: self.popupView,
             settings: self.settingsView,
-            portal: self.portalView
+            portal: self.portalView,
+            notifications: self.notificationsView
         )
         guard self.available else { return }
         
-        self.loadReader = LoadReader(.CPU)
-        self.processReader = ProcessReader(.CPU)
-        self.averageReader = AverageReader(.CPU, popup: true)
-        self.temperatureReader = TemperatureReader(.CPU, popup: true)
+        self.loadReader = LoadReader(.CPU) { [weak self] value in
+            self?.loadCallback(value)
+        }
+        self.processReader = ProcessReader(.CPU) { [weak self] value in
+            self?.popupView.processCallback(value)
+        }
+        self.averageReader = AverageReader(.CPU, popup: true) { [weak self] value in
+            self?.popupView.averageCallback(value)
+        }
+        self.temperatureReader = TemperatureReader(.CPU, popup: true) { [weak self] value in
+            self?.popupView.temperatureCallback(value)
+        }
         
         #if arch(x86_64)
-        self.limitReader = LimitReader(.CPU, popup: true)
-        self.frequencyReader = FrequencyReader(.CPU, popup: true)
+        self.limitReader = LimitReader(.CPU, popup: true) { [weak self] value in
+            self?.popupView.limitCallback(value)
+        }
+        #else
+        self.frequencyReader = FrequencyReader(.CPU, popup: false) { [weak self] value in
+            self?.popupView.frequencyCallback(value)
+        }
         #endif
         
         self.settingsView.callback = { [weak self] in
@@ -130,75 +156,25 @@ public class CPU: Module {
         self.settingsView.setTopInterval = { [weak self] value in
             self?.processReader?.setInterval(value)
         }
-        self.settingsView.IPGCallback = { [weak self] value in
-            if value {
-                self?.frequencyReader?.setup()
-            }
-            self?.popupView.toggleFrequency(state: value)
-        }
         
-        self.loadReader?.callbackHandler = { [weak self] value in
-            self?.loadCallback(value)
-        }
-        self.loadReader?.readyCallback = { [weak self] in
-            self?.readyHandler()
-        }
-        
-        self.processReader?.callbackHandler = { [weak self] value in
-            if let list = value {
-                self?.popupView.processCallback(list)
-            }
-        }
-        
-        self.temperatureReader?.callbackHandler = { [weak self] value in
-            if let v = value  {
-                self?.popupView.temperatureCallback(v)
-            }
-        }
-        self.frequencyReader?.callbackHandler = { [weak self] value in
-            if let v = value  {
-                self?.popupView.frequencyCallback(v)
-            }
-        }
-        self.limitReader?.callbackHandler = { [weak self] value in
-            if let v = value  {
-                self?.popupView.limitCallback(v)
-            }
-        }
-        self.averageReader?.callbackHandler = { [weak self] value in
-            if let v = value  {
-                self?.popupView.averageCallback(v)
-            }
-        }
-        
-        if let reader = self.loadReader {
-            self.addReader(reader)
-        }
-        if let reader = self.processReader {
-            self.addReader(reader)
-        }
-        if let reader = self.temperatureReader {
-            self.addReader(reader)
-        }
-        if let reader = self.frequencyReader {
-            self.addReader(reader)
-        }
-        if let reader = self.limitReader {
-            self.addReader(reader)
-        }
-        if let reader = self.averageReader {
-            self.addReader(reader)
-        }
+        self.setReaders([
+            self.loadReader,
+            self.processReader,
+            self.temperatureReader,
+            self.frequencyReader,
+            self.limitReader,
+            self.averageReader
+        ])
     }
     
     private func loadCallback(_ raw: CPU_Load?) {
         guard let value = raw, self.enabled else { return }
         
         self.popupView.loadCallback(value)
-        self.portalView.loadCallback(value)
-        self.checkNotificationLevel(value.totalUsage)
+        self.portalView.callback(value)
+        self.notificationsView.loadCallback(value)
         
-        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: Widget) in
+        self.menuBar.widgets.filter{ $0.isActive }.forEach { [self] (w: SWidget) in
             switch w.item {
             case let widget as Mini: widget.setValue(value.totalUsage)
             case let widget as LineChart: widget.setValue(value.totalUsage)
@@ -245,21 +221,12 @@ public class CPU: Module {
             default: break
             }
         }
-    }
-    
-    private func checkNotificationLevel(_ value: Double) {
-        guard self.notificationLevel != "Disabled", let level = Double(self.notificationLevel) else { return }
         
-        if let id = self.notificationID, value < level && self.notificationLevelState {
-            removeNotification(id)
-            self.notificationID = nil
-            self.notificationLevelState = false
-        } else if value >= level && !self.notificationLevelState {
-            self.notificationID = showNotification(
-                title: localizedString("CPU usage threshold"),
-                subtitle: localizedString("CPU usage is", "\(Int((value)*100))%")
-            )
-            self.notificationLevelState = true
+        if #available(macOS 11.0, *) {
+            guard let blobData = try? JSONEncoder().encode(value) else { return }
+            self.userDefaults?.set(blobData, forKey: "CPU@LoadReader")
+            WidgetCenter.shared.reloadTimelines(ofKind: CPU_entry.kind)
+            WidgetCenter.shared.reloadTimelines(ofKind: "UnitedWidget")
         }
     }
 }

@@ -14,21 +14,15 @@ import Cocoa
 public struct Stack_t: KeyValue_p {
     public var key: String
     public var value: String
-    public var additional: Any?
     
     var index: Int {
-        get {
-            Store.shared.int(key: "stack_\(self.key)_index", defaultValue: -1)
-        }
-        set {
-            Store.shared.set(key: "stack_\(self.key)_index", value: newValue)
-        }
+        get { Store.shared.int(key: "stack_\(self.key)_index", defaultValue: -1) }
+        set { Store.shared.set(key: "stack_\(self.key)_index", value: newValue) }
     }
     
-    public init(key: String, value: String, additional: Any? = nil) {
+    public init(key: String, value: String) {
         self.key = key
         self.value = value
-        self.additional = additional
     }
 }
 
@@ -36,13 +30,21 @@ public class StackWidget: WidgetWrapper {
     private var modeState: StackMode = .auto
     private var fixedSizeState: Bool = false
     private var monospacedFontState: Bool = false
+    private var alignmentState: String = "left"
     
     private var values: [Stack_t] = []
     
-    private var oneRowWidth: CGFloat = 38
-    private var twoRowWidth: CGFloat = 28
+    private var oneRowWidth: CGFloat = 45
+    private var twoRowWidth: CGFloat = 32
     
     private let orderTableView: OrderTableView
+    
+    private var alignment: NSTextAlignment {
+        if let alignmentPair = Alignments.first(where: { $0.key == self.alignmentState }) {
+            return alignmentPair.additional as? NSTextAlignment ?? .left
+        }
+        return .left
+    }
     
     public init(title: String, config: NSDictionary?, preview: Bool = false) {
         if let config, preview {
@@ -68,6 +70,7 @@ public class StackWidget: WidgetWrapper {
             self.modeState = StackMode(rawValue: Store.shared.string(key: "\(self.title)_\(self.type.rawValue)_mode", defaultValue: self.modeState.rawValue)) ?? .auto
             self.fixedSizeState = Store.shared.bool(key: "\(self.title)_\(self.type.rawValue)_size", defaultValue: self.fixedSizeState)
             self.monospacedFontState = Store.shared.bool(key: "\(self.title)_\(self.type.rawValue)_monospacedFont", defaultValue: self.monospacedFontState)
+            self.alignmentState = Store.shared.string(key: "\(self.title)_\(self.type.rawValue)_alignment", defaultValue: self.alignmentState)
         }
         
         self.orderTableView.reorderCallback = { [weak self] in
@@ -82,24 +85,31 @@ public class StackWidget: WidgetWrapper {
     public override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         
-        guard !self.values.isEmpty else {
+        var values: [Stack_t] = []
+        var mode: StackMode = .auto
+        self.queue.sync {
+            values = self.values
+            mode = self.modeState
+        }
+        
+        guard !values.isEmpty else {
             self.setWidth(0)
             return
         }
         
-        let num: Int = Int(round(Double(self.values.count) / 2))
+        let num: Int = Int(round(Double(values.count) / 2))
         var totalWidth: CGFloat = Constants.Widget.spacing  // opening space
         var x: CGFloat = Constants.Widget.spacing
         
         var i = 0
-        while i < self.values.count {
-            switch self.modeState {
+        while i < values.count {
+            switch mode {
             case .auto, .twoRows:
-                let firstElement: Stack_t = self.values[i]
-                let secondElement: Stack_t? = self.values.indices.contains(i+1) ? self.values[i+1] : nil
+                let firstElement: Stack_t = values[i]
+                let secondElement: Stack_t? = values.indices.contains(i+1) ? values[i+1] : nil
                 
                 var width: CGFloat = 0
-                if self.modeState == .auto && secondElement == nil {
+                if mode == .auto && secondElement == nil {
                     width += self.drawOneRow(x, firstElement)
                 } else {
                     width += self.drawTwoRows(x, firstElement, secondElement)
@@ -115,13 +125,13 @@ public class StackWidget: WidgetWrapper {
                 
                 i += 1
             case .oneRow:
-                let width = self.drawOneRow(x, self.values[i])
+                let width = self.drawOneRow(x, values[i])
                 
                 x += width
                 totalWidth += width
                 
                 // add margins between columns
-                if self.values.count != 1 && i != self.values.count {
+                if values.count != 1 && i != values.count {
                     x += Constants.Widget.spacing
                     totalWidth += Constants.Widget.spacing
                 }
@@ -136,18 +146,25 @@ public class StackWidget: WidgetWrapper {
     }
     
     private func drawOneRow(_ x: CGFloat, _ element: Stack_t) -> CGFloat {
-        var font: NSFont
-        if self.monospacedFontState {
+        var monospacedFontState: Bool = false
+        var fixedSizeState: Bool = false
+        var alignment: NSTextAlignment = .left
+        self.queue.sync {
+            monospacedFontState = self.monospacedFontState
+            fixedSizeState = self.fixedSizeState
+            alignment = self.alignment
+        }
+        
+        var font: NSFont = NSFont.systemFont(ofSize: 13, weight: .regular)
+        if monospacedFontState {
             font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
-        } else {
-            font = NSFont.systemFont(ofSize: 13, weight: .regular)
         }
         
         let style = NSMutableParagraphStyle()
-        style.alignment = .center
+        style.alignment = alignment
         
         var width: CGFloat = self.oneRowWidth
-        if !self.fixedSizeState {
+        if !fixedSizeState {
             width = element.value.widthOfString(usingFont: font).rounded(.up) + 2
         }
         
@@ -164,15 +181,23 @@ public class StackWidget: WidgetWrapper {
     
     private func drawTwoRows(_ x: CGFloat, _ topElement: Stack_t, _ bottomElement: Stack_t?) -> CGFloat {
         let rowHeight: CGFloat = self.frame.height / 2
+        var monospacedFontState: Bool = false
+        var fixedSizeState: Bool = false
+        var alignment: NSTextAlignment = .left
+        self.queue.sync {
+            monospacedFontState = self.monospacedFontState
+            fixedSizeState = self.fixedSizeState
+            alignment = self.alignment
+        }
         
         var font: NSFont
-        if self.monospacedFontState {
+        if monospacedFontState {
             font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .light)
         } else {
             font = NSFont.systemFont(ofSize: 10, weight: .light)
         }
         let style = NSMutableParagraphStyle()
-        style.alignment = .right
+        style.alignment = alignment
         
         let attributes = [
             NSAttributedString.Key.font: font,
@@ -181,7 +206,7 @@ public class StackWidget: WidgetWrapper {
         ]
         
         var width: CGFloat = self.twoRowWidth
-        if !self.fixedSizeState {
+        if !fixedSizeState {
             let firstRowWidth = topElement.value.widthOfString(usingFont: font)
             let secondRowWidth = bottomElement?.value.widthOfString(usingFont: font) ?? 0
             width = max(20, max(firstRowWidth, secondRowWidth)).rounded(.up) + 2
@@ -231,26 +256,29 @@ public class StackWidget: WidgetWrapper {
     public override func settings() -> NSView {
         let view = SettingsContainerView()
         
-        view.addArrangedSubview(selectSettingsRow(
-            title: localizedString("Display mode"),
-            action: #selector(self.changeDisplayMode),
-            items: SensorsWidgetMode,
-            selected: self.modeState.rawValue
-        ))
-        
+        var rows = [
+            PreferencesRow(localizedString("Display mode"), component: selectView(
+                action: #selector(self.changeDisplayMode),
+                items: SensorsWidgetMode,
+                selected: self.modeState.rawValue
+            )),
+            PreferencesRow(localizedString("Monospaced font"), component: switchView(
+                action: #selector(self.toggleMonospacedFont),
+                state: self.monospacedFontState
+            )),
+            PreferencesRow(localizedString("Alignment"), component: selectView(
+                action: #selector(self.toggleAlignment),
+                items: Alignments,
+                selected: self.alignmentState
+            ))
+        ]
         if self.title != "Clock" {
-            view.addArrangedSubview(toggleSettingRow(
-                title: localizedString("Static width"),
+            rows.append(PreferencesRow(localizedString("Static width"), component: switchView(
                 action: #selector(self.toggleSize),
                 state: self.fixedSizeState
-            ))
+            )))
         }
-        
-        view.addArrangedSubview(toggleSettingRow(
-            title: localizedString("Monospaced font"),
-            action: #selector(self.toggleMonospacedFont),
-            state: self.monospacedFontState
-        ))
+        view.addArrangedSubview(PreferencesSection(rows))
         
         view.addArrangedSubview(self.orderTableView)
         
@@ -275,6 +303,15 @@ public class StackWidget: WidgetWrapper {
         Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_monospacedFont", value: self.monospacedFontState)
         self.display()
     }
+    
+    @objc private func toggleAlignment(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String else { return }
+        if let newAlignment = Alignments.first(where: { $0.key == key }) {
+            self.alignmentState = newAlignment.key
+        }
+        Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_alignment", value: key)
+        self.display()
+    }
 }
 
 private class OrderTableView: NSView, NSTableViewDelegate, NSTableViewDataSource {
@@ -282,7 +319,7 @@ private class OrderTableView: NSView, NSTableViewDelegate, NSTableViewDataSource
     private let tableView = NSTableView()
     private var dragDropType = NSPasteboard.PasteboardType(rawValue: "\(Bundle.main.bundleIdentifier!).sensors-row")
     
-    public var reorderCallback: () -> Void = {}
+    fileprivate var reorderCallback: () -> Void = {}
     private let list: UnsafeMutablePointer<[Stack_t]>
     
     init(_ list: UnsafeMutablePointer<[Stack_t]>) {
@@ -336,7 +373,7 @@ private class OrderTableView: NSView, NSTableViewDelegate, NSTableViewDataSource
         NotificationCenter.default.removeObserver(self)
     }
     
-    public func update() {
+    fileprivate func update() {
         self.tableView.reloadData()
     }
     

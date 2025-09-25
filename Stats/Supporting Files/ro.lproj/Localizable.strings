@@ -69,11 +69,37 @@
 "Square" = "Square";
 "Cube" = "Cube";
 "Logarithmic" = "Logarithmic";
+"Fixed scale" = "Fixed";
 "Cores" = "Cores";
 "Settings" = "Settings";
 "Name" = "Name";
 "Format" = "Format";
 "Turn off" = "Turn off";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "Stats Setup";
@@ -105,6 +131,7 @@
 "Successfully updated" = "Actualizat cu succes";
 "Stats was updated to v" = "Stats a fost actualizat la v%0";
 "Reset settings text" = "All application settings will be reset and the application will be restarted. Are you sure you want to do this?";
+"Support text" = "Vă mulțumim pentru utilizarea Stats!\n\n Menținerea și îmbunătățirea acestui proiect open-source necesită timp și resurse. Sprijinul dumneavoastră ne ajută să continuăm să oferim o aplicație gratuită și fiabilă pentru toată lumea.\n\nDacă Stats vă este util, vă rugăm să luați în considerare posibilitatea de a face o contribuție. Fiecare bănuț ajută!";
 
 // Settings
 "Open Activity Monitor" = "Deschide Monitorul de Activitate";
@@ -113,6 +140,9 @@
 "Close application" = "Închide aplicația";
 "Open application settings" = "Deschide setăriile aplicației";
 "Open dashboard" = "Open dashboard";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "Actualizează aplicația";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "Arată icoana in doc";
 "Start at login" = "Pornește la autentificare";
 "Build number" = "Build number";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "Reset settings";
 "Pause the Stats" = "Pause the Stats";
 "Resume the Stats" = "Resume the Stats";
 "Combined modules" = "Combined modules";
+"Combined details" = "Combined details";
 "Spacing" = "Spacing";
 "Share anonymous telemetry" = "Share anonymous telemetry";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "Număr de serie";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "Timp în opererare";
 "Number of cores" = "%0 cores";
 "Number of threads" = "%0 threads";
 "Number of e-cores" = "%0 efficiency cores";
 "Number of p-cores" = "%0 performance cores";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "Cea mai recentă versiune de Stats instalată";
@@ -173,6 +211,8 @@
 "Static width" = "Static width";
 "Tachometer widget" = "Tachometer";
 "State widget" = "State widget";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "Show symbols";
 "Label widget" = "Label";
 "Number of reads in the chart" = "Number of reads in the chart";
@@ -180,6 +220,10 @@
 "Color of upload" = "Color of upload";
 "Monospaced font" = "Monospaced font";
 "Reverse order" = "Reverse order";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "Deschide setăriile modulului";
@@ -197,12 +241,19 @@
 "Merge widgets" = "Îmbinați widget-uri";
 "No available widgets to configure" = "Nu există widgeturi disponibile de configurat";
 "No options to configure for the popup in this module" = "Nu există opțiuni de configurat pentru fereastra pop-up din acest modul";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "Numărul proceselor de vârf";
 "Update interval for top processes" = "Update interval for top processes";
 "Notification level" = "Notification level";
 "Chart color" = "Chart color";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "Utilizarea procesorului";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "Cluster grouping";
 "Efficiency cores color" = "Efficiency cores color";
 "Performance cores color" = "Performance cores color";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "Placa video să fie arătată";
@@ -269,6 +326,9 @@
 "Wired color" = "Wired color";
 "Compressed color" = "Compressed color";
 "Free color" = "Free color";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "Arată discurile detașabile";
@@ -282,6 +342,12 @@
 "Read color" = "Read color";
 "Write color" = "Write color";
 "Disk usage" = "Disk usage";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "Temperatura unității";
@@ -299,6 +365,11 @@
 "Fan value" = "Fan value";
 "Turn off fan" = "Turn off fan";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "Incarcă";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "Nonactive state color";
 "Connectivity host (ICMP)" = "Connectivity host (ICMP)";
 "Leave empty to disable the check" = "Leave empty to disable the check";
-"Transparent pictogram when no activity" = "Transparent pictogram when no activity";
 "Connectivity history" = "Connectivity history";
 "Auto-refresh public IP address" = "Auto-refresh public IP address";
 "Every hour" = "Every hour";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Every 24 hours";
 "Network activity" = "Network activity";
 "Last reset" = "Last reset %0 ago";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "Nivel";
@@ -377,6 +452,9 @@
 "Low power mode" = "Low power mode";
 "Percentage inside the icon" = "Percentage inside the icon";
 "Colorize battery" = "Colorize battery";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "Battery to show";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Time zone";
 "Local" = "Local";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "Based on utilization";

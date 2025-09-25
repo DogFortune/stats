@@ -69,11 +69,37 @@
 "Square" = "平方";
 "Cube" = "立方";
 "Logarithmic" = "对数";
+"Fixed scale" = "固定值";
 "Cores" = "核心数";
 "Settings" = "设置";
 "Name" = "名称";
 "Format" = "格式";
 "Turn off" = "禁用";
+"Normal" = "正常";
+"Warning" = "警告";
+"Critical" = "严重";
+"Usage" = "用量";
+"2 minutes" = "2 分钟";
+"3 minutes" = "3 分钟";
+"10 minutes" = "10 分钟";
+"Import" = "导入";
+"Export" = "导出";
+"Separator" = "分隔符";
+"Read" = "读取";
+"Write" = "写入";
+"Frequency" = "频率";
+"Save" = "保存";
+"Run" = "运行";
+"Stop" = "停止";
+"Uninstall" = "卸载";
+"1 sec" = "1 秒";
+"2 sec" = "2 秒";
+"3 sec" = "3 秒";
+"5 sec" = "5 秒";
+"10 sec" = "10 秒";
+"15 sec" = "15 秒";
+"30 sec" = "30 秒";
+"60 sec" = "60 秒";
 
 // Setup
 "Stats Setup" = "Stats 设置";
@@ -105,6 +131,7 @@
 "Successfully updated" = "更新成功";
 "Stats was updated to v" = "Stats 已更新到 v%0";
 "Reset settings text" = "应用程序的所有设置将会被重置，应用程序也将重新启动。你确定要这么做吗？";
+"Support text" = "感谢您使用 Stats！\n\n 维护和改进这个开源项目需要花费时间和资源。您的支持能帮助我们继续给每个人提供这样免费且可靠的应用程序。\n\n如果您觉得 Stats 对您有帮助，请考虑给我们一份捐助。即使是一点一滴都有很大的帮助！";
 
 // Settings
 "Open Activity Monitor" = "打开活动监视器";
@@ -113,6 +140,9 @@
 "Close application" = "关闭应用";
 "Open application settings" = "打开应用设置";
 "Open dashboard" = "打开仪表盘";
+"No notifications available in this module" = "该模块不支持通知";
+"Open Calendar" = "打开日历";
+"Toggle the module" = "切换模块显示";
 
 // Application settings
 "Update application" = "更新应用";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "在程序坞显示图标";
 "Start at login" = "登录时打开";
 "Build number" = "版本号";
+"Import settings" = "导入设置";
+"Export settings" = "导出设置";
 "Reset settings" = "初始化所有设置";
 "Pause the Stats" = "暂停 Stats";
 "Resume the Stats" = "恢复 Stats";
 "Combined modules" = "合并模块";
+"Combined details" = "合并详情";
 "Spacing" = "间距";
 "Share anonymous telemetry" = "分享匿名诊断数据";
+"Choose file" = "选择文件";
+"Stress tests" = "压力测试";
 
 // Dashboard
 "Serial number" = "序列号";
+"Model identifier" = "机型标识符";
+"Production year" = "生产年份";
 "Uptime" = "启动时间";
 "Number of cores" = "%0 核心";
 "Number of threads" = "%0 线程";
 "Number of e-cores" = "%0 能效核心";
 "Number of p-cores" = "%0 性能核心";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "已安装最新版 Stats";
@@ -172,7 +210,9 @@
 "Memory widget" = "容量";
 "Static width" = "固定宽度";
 "Tachometer widget" = "转速计";
-"State widget" = "状态小组件";
+"State widget" = "状态";
+"Text widget" = "文本";
+"Battery details widget" = "电池详情";
 "Show symbols" = "显示标识";
 "Label widget" = "标签";
 "Number of reads in the chart" = "图表显示的读取次数";
@@ -180,6 +220,10 @@
 "Color of upload" = "上传颜色";
 "Monospaced font" = "等宽字体";
 "Reverse order" = "调转顺序";
+"Chart history" = "图表统计时长";
+"Default color" = "默认";
+"Transparent when no activity" = "无活动时保持透明";
+"Constant color" = "恒定颜色";
 
 // Module Kit
 "Open module settings" = "打开模块设置";
@@ -197,12 +241,19 @@
 "Merge widgets" = "合并组件";
 "No available widgets to configure" = "没有可配置的小组件";
 "No options to configure for the popup in this module" = "该组件没有可配置的选项";
+"Process" = "进程";
+"Kill process" = "结束进程";
+"Keyboard shortcut" = "键盘快捷键";
+"Listening..." = "监听中...";
 
 // Modules
 "Number of top processes" = "高占用进程数";
 "Update interval for top processes" = "高占用进程的更新间隔";
 "Notification level" = "通知级别";
 "Chart color" = "图表颜色";
+"Main chart scaling" = "主图表缩放";
+"Scale value" = "缩放值";
+"Text widget value" = "文本小组件值";
 
 // CPU
 "CPU usage" = "CPU 占用";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "按集群分组";
 "Efficiency cores color" = "能效核心颜色";
 "Performance cores color" = "性能核心颜色";
+"Total load" = "总占用";
+"System load" = "系统占用";
+"User load" = "用户占用";
+"Efficiency cores load" = "能效核心占用";
+"Performance cores load" = "性能核心占用";
+"All cores" = "所有核心";
 
 // GPU
 "GPU to show" = "显示的 GPU";
@@ -269,6 +326,9 @@
 "Wired color" = "联动内存颜色";
 "Compressed color" = "被压缩内存颜色";
 "Free color" = "可用内存颜色";
+"Free memory (less than)" = "可用内存（小于）";
+"Swap size" = "已使用交换";
+"Free RAM is" = "可有内存还有 %0";
 
 // Disk
 "Show removable disks" = "显示可移动磁盘";
@@ -282,6 +342,12 @@
 "Read color" = "读取颜色";
 "Write color" = "写入颜色";
 "Disk usage" = "磁盘使用";
+"Total read" = "总读取量";
+"Total written" = "总写入量";
+"Write speed" = "写入速度";
+"Read speed" = "读取速度";
+"Drives" = "驱动器";
+"SMART data" = "SMART 数据";
 
 // Sensors
 "Temperature unit" = "温度单位";
@@ -299,6 +365,11 @@
 "Fan value" = "风扇转数";
 "Turn off fan" = "禁用风扇";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "你想禁用你的风扇，这可能损害你的 Mac。不推荐进行这个操作，你确定要继续吗？";
+"Sensor threshold" = "传感器阈值";
+"Left fan" = "左侧风扇";
+"Right fan" = "右侧风扇";
+"Fastest fan" = "最高转速风扇";
+"Sensor to show" = "要显示的传感器";
 
 // Network
 "Uploading" = "上传";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "非活跃状态颜色";
 "Connectivity host (ICMP)" = "连接 Host (ICMP)";
 "Leave empty to disable the check" = "不在该选项内输入以禁用检查";
-"Transparent pictogram when no activity" = "不活跃时隐藏标识";
 "Connectivity history" = "连接历史";
 "Auto-refresh public IP address" = "自动刷新公网 IP 地址";
 "Every hour" = "每小时";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "每 24 小时";
 "Network activity" = "网络活动";
 "Last reset" = "上次重置于 %0 之前";
+"Latency" = "延迟";
+"Upload speed" = "上传速度";
+"Download speed" = "下载速度";
+"Address" = "地址";
+"WiFi network" = "WiFi 网络";
 
 // Battery
 "Level" = "电量";
@@ -377,6 +452,9 @@
 "Low power mode" = "低电量模式";
 "Percentage inside the icon" = "图标内百分比";
 "Colorize battery" = "启用彩色电池图标";
+"Charging current" = "充电电流";
+"Charging Voltage" = "充电电压";
+"Charger state inside the battery" = "在电池图标内显示充电器状态";
 
 // Bluetooth
 "Battery to show" = "显示的设备";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "时区";
 "Local" = "本地";
+"Calendar" = "日历";
+"Local time" = "本地时间";
+"Add new clock" = "添加新时钟";
+"Delete selected clock" = "删除选定的时钟";
+"Help with datetime format" = "日期时间格式帮助";
 
 // Colors
 "Based on utilization" = "基于利用率";

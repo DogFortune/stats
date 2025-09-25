@@ -69,11 +69,37 @@
 "Square" = "مربع";
 "Cube" = "مکعب";
 "Logarithmic" = "لگاریتمی";
+"Fixed scale" = "Fixed";
 "Cores" = "هسته ها";
 "Settings" = "Settings";
 "Name" = "Name";
 "Format" = "Format";
 "Turn off" = "Turn off";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "نصب Stats";
@@ -105,6 +131,7 @@
 "Successfully updated" = "با موفقیت به‌روزرسانی شد";
 "Stats was updated to v" = "Stats به نسخه‌ی v%0 بروزسانی شد  ";
 "Reset settings text" = "تمام تنظیمات اپلیکیشن ریست خواهد شد و اپ دوباره راه‌اندازی خواهد شد، آیا از این کار مطمئنید؟";
+"Support text" = "از اینکه از آمار استفاده می کنید متشکریم!\n\n نگهداری و بهبود این پروژه منبع باز زمان و منابع می طلبد. پشتیبانی شما به ما کمک می‌کند تا به ارائه یک برنامه رایگان و قابل اعتماد برای همه ادامه دهیم.\n\nاگر آمارها را مفید می‌دانید، لطفاً در نظر بگیرید. هر ذره کمک می کند!";
 
 // Settings
 "Open Activity Monitor" = "باز کردن نظارت فعالیت‌ها";
@@ -113,6 +140,9 @@
 "Close application" = "بستن اپلیکیشن";
 "Open application settings" = "بستن تنظیمات اپلیکیشن";
 "Open dashboard" = "باز کردن داشبورد";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "بروزرسانی اپلیکیشن";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "نمایش آیکون در داک";
 "Start at login" = "باز شدن در زمان لاگین";
 "Build number" = "شماره ساخت";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "ریست تنظیمات";
 "Pause the Stats" = "متوقف کردن Stats";
 "Resume the Stats" = "ادامه‌ی کار Stats";
 "Combined modules" = "Combined modules";
+"Combined details" = "Combined details";
 "Spacing" = "Spacing";
 "Share anonymous telemetry" = "Share anonymous telemetry";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "سریال نامبر";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "زمان روشن بودن";
 "Number of cores" = "%0 هسته‌ها";
 "Number of threads" = "%0 ترد‌ها";
 "Number of e-cores" = "%0 هسته‌های کم‌مصرف";
 "Number of p-cores" = "%0 هسته‌های پرقدرت";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "آخرین نسخه‌ی Stats نصب شده است";
@@ -173,6 +211,8 @@
 "Static width" = "عرض ثابت";
 "Tachometer widget" = "تاکومتر";
 "State widget" = "ویجت حالت";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "ویجت نمادها";
 "Label widget" = "لیبل";
 "Number of reads in the chart" = "تعداد خواندن‌ها در نمودار";
@@ -180,6 +220,10 @@
 "Color of upload" = "رنگ آپلود";
 "Monospaced font" = "Monospaced font";
 "Reverse order" = "Reverse order";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "باز کردن تنظیمات ماژول‌ها";
@@ -197,12 +241,19 @@
 "Merge widgets" = "ادغام ویجت‌ها";
 "No available widgets to configure" = "ویجتی برای پیکربندی در دسترس نیست";
 "No options to configure for the popup in this module" = "در این ماژول تنظیمی برای پاپ‌آپ موجود نیست";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "تعداد بالاترین پردازش‌ها";
 "Update interval for top processes" = " بروزرسانی زمان‌بندی برای بالاترین پردازش‌ها";
 "Notification level" = "سطح نوتیفیکیشن";
 "Chart color" = "رنگ نمودار";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "مصرف سی پی یو";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "گروه‌بندی کلاستر";
 "Efficiency cores color" = "Efficiency cores color";
 "Performance cores color" = "Performance cores color";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "نمایش جی پی یو";
@@ -269,6 +326,9 @@
 "Wired color" = "رنگ سیستم‌بندی";
 "Compressed color" = "رنگ فشرده شده";
 "Free color" = "رنگ آزاد";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "نمایش حافظه‌های متصل شده";
@@ -282,6 +342,12 @@
 "Read color" = "Read color";
 "Write color" = "Write color";
 "Disk usage" = "Disk usage";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "واحد دما";
@@ -299,6 +365,11 @@
 "Fan value" = "Fan value";
 "Turn off fan" = "Turn off fan";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "آپلود";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "رنگ حالت غیر فعال";
 "Connectivity host (ICMP)" = "میزبان اتصال (ICMP)";
 "Leave empty to disable the check" = "خالی بگذارید تا بررسی غیرفعال شود";
-"Transparent pictogram when no activity" = "Transparent pictogram when no activity";
 "Connectivity history" = "Connectivity history";
 "Auto-refresh public IP address" = "Auto-refresh public IP address";
 "Every hour" = "Every hour";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Every 24 hours";
 "Network activity" = "Network activity";
 "Last reset" = "Last reset %0 ago";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "سطح";
@@ -377,6 +452,9 @@
 "Low power mode" = "حالت کم مصرف";
 "Percentage inside the icon" = "درصد داخل آیکون";
 "Colorize battery" = "Colorize battery";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "نشان دادن باتری";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Time zone";
 "Local" = "Local";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "بر اساس استفاده";

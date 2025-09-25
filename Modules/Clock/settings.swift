@@ -22,7 +22,7 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
     
     private var list: [Clock_t] {
         get {
-            if let objects = Store.shared.data(key: "\(Clock.title)_list") {
+            if let objects = Store.shared.data(key: "\(self.title)_list") {
                 let decoder = JSONDecoder()
                 if let objectsDecoded = try? decoder.decode(Array.self, from: objects) as [Clock_t] {
                     return objectsDecoded
@@ -32,16 +32,17 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
         }
         set {
             if newValue.isEmpty {
-                Store.shared.remove("\(Clock.title)_list")
+                Store.shared.remove("\(self.title)_list")
             } else {
                 let encoder = JSONEncoder()
                 if let encoded = try? encoder.encode(newValue){
-                    Store.shared.set(key: "\(Clock.title)_list", value: encoded)
+                    Store.shared.set(key: "\(self.title)_list", value: encoded)
                 }
             }
         }
     }
     
+    private var title: String
     private var selectedRow: Int = -1
     
     private let scrollView = NSScrollView()
@@ -49,17 +50,13 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
     private var footerView: NSStackView? = nil
     private var deleteButton: NSButton? = nil
     
-    public init() {
+    public init(_ module: ModuleType) {
+        self.title = module.stringValue
+        
         super.init(frame: NSRect.zero)
         
         self.orientation = .vertical
         self.distribution = .gravityAreas
-        self.edgeInsets = NSEdgeInsets(
-            top: Constants.Settings.margin,
-            left: Constants.Settings.margin,
-            bottom: Constants.Settings.margin,
-            right: Constants.Settings.margin
-        )
         self.spacing = 0
         
         self.scrollView.documentView = self.tableView
@@ -82,7 +79,7 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
         if #available(macOS 11.0, *) {
             self.tableView.style = .plain
         }
-        self.tableView.rowHeight = 27
+        self.tableView.rowHeight = 32
         
         let nameColumn = NSTableColumn(identifier: nameColumnID)
         nameColumn.headerCell.title = localizedString("Name")
@@ -112,7 +109,7 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
         self.addArrangedSubview(self.footer())
         
         NSLayoutConstraint.activate([
-            self.scrollView.heightAnchor.constraint(equalToConstant: 278)
+            self.scrollView.heightAnchor.constraint(equalToConstant: 296)
         ])
     }
     
@@ -123,21 +120,19 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
     private func footer() -> NSView {
         let view = NSStackView()
         view.heightAnchor.constraint(equalToConstant: 27).isActive = true
-        view.spacing = 0
+        view.spacing = 4
         view.orientation = .horizontal
         
         var addButton: NSButton {
             let btn = NSButton()
             btn.widthAnchor.constraint(equalToConstant: 27).isActive = true
             btn.heightAnchor.constraint(equalToConstant: 27).isActive = true
-            btn.bezelStyle = .regularSquare
-            btn.translatesAutoresizingMaskIntoConstraints = false
+            btn.bezelStyle = .rounded
             if #available(macOS 11.0, *) {
-                btn.image =  iconFromSymbol(name: "plus", scale: .large)
+                btn.image =  iconFromSymbol(name: "plus", scale: .medium)
             } else {
-                btn.title = "Add"
+                btn.title = localizedString("Add")
             }
-            btn.isBordered = false
             btn.action = #selector(self.addNewClock)
             btn.target = self
             btn.toolTip = localizedString("Add new clock")
@@ -148,14 +143,12 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
             let btn = NSButton()
             btn.widthAnchor.constraint(equalToConstant: 27).isActive = true
             btn.heightAnchor.constraint(equalToConstant: 27).isActive = true
-            btn.bezelStyle = .regularSquare
-            btn.translatesAutoresizingMaskIntoConstraints = false
+            btn.bezelStyle = .rounded
             if #available(macOS 11.0, *) {
-                btn.image =  iconFromSymbol(name: "minus", scale: .large)
+                btn.image =  iconFromSymbol(name: "minus", scale: .medium)
             } else {
-                btn.title = "Add"
+                btn.title = localizedString("Delete")
             }
-            btn.isBordered = false
             btn.action = #selector(self.deleteClock)
             btn.target = self
             btn.toolTip = localizedString("Delete selected clock")
@@ -166,6 +159,16 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
         
         view.addArrangedSubview(addButton)
         view.addArrangedSubview(NSView())
+        
+        let helpBtn = NSButton()
+        helpBtn.widthAnchor.constraint(equalToConstant: 27).isActive = true
+        helpBtn.heightAnchor.constraint(equalToConstant: 27).isActive = true
+        helpBtn.bezelStyle = .helpButton
+        helpBtn.title = ""
+        helpBtn.action = #selector(self.openFormatHelp)
+        helpBtn.target = self
+        helpBtn.toolTip = localizedString("Help with datetime format")
+        view.addArrangedSubview(helpBtn)
         
         self.footerView = view
         return view
@@ -194,7 +197,6 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
             text.delegate = self
             text.stringValue = id == nameColumnID ? item.name : item.format
             text.translatesAutoresizingMaskIntoConstraints = false
-            
             cell.addSubview(text)
             text.widthAnchor.constraint(equalTo: cell.widthAnchor).isActive = true
             text.centerYAnchor.constraint(equalTo: cell.centerYAnchor).isActive = true
@@ -202,9 +204,12 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
             let select: NSPopUpButton = selectView(action: #selector(self.toggleTZ), items: Clock.zones, selected: item.tz)
             select.identifier = NSUserInterfaceItemIdentifier("\(row)")
             select.sizeToFit()
+            select.preferredEdge = .maxX
+            select.translatesAutoresizingMaskIntoConstraints = false
+            select.widthAnchor.constraint(lessThanOrEqualToConstant: 132).isActive = true
             cell.addSubview(select)
         case statusColumnID:
-            let button: NSButton = NSButton(frame: NSRect(x: 0, y: 5, width: 10, height: 10))
+            let button: NSButton = NSButton(frame: NSRect(x: 0, y: 8, width: 10, height: 10))
             button.identifier = NSUserInterfaceItemIdentifier("\(row)")
             button.setButtonType(.switch)
             button.state = item.enabled ? .on : .off
@@ -239,7 +244,7 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
             self.deleteButton?.removeFromSuperview()
         } else {
             if let btn = self.deleteButton {
-                self.footerView?.addArrangedSubview(btn)
+                self.footerView?.insertArrangedSubview(btn, at: 1)
             }
         }
     }
@@ -248,14 +253,12 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
         guard let key = sender.representedObject as? String, let id = sender.identifier, let i = Int(id.rawValue) else { return }
         self.list[i].tz = key
     }
-    
     @objc private func toggleClock(_ sender: NSButton) {
         guard let id = sender.identifier, let i = Int(id.rawValue) else { return }
         self.list[i].enabled = sender.state == NSControl.StateValue.on
     }
-    
     @objc private func addNewClock(_ sender: Any) {
-        self.list.append(Clock_t(name: "Clock \(self.list.count)", format: Clock.local.format, tz: Clock.local.tz))
+        self.list.append(Clock_t(name: "\(localizedString("Clock")) \(self.list.count)", format: Clock.local.format, tz: Clock.local.tz))
         self.tableView.reloadData()
     }
     @objc private func deleteClock(_ sender: Any) {
@@ -263,5 +266,8 @@ internal class Settings: NSStackView, Settings_v, NSTableViewDelegate, NSTableVi
         self.list.remove(at: self.tableView.selectedRow)
         self.tableView.reloadData()
         self.deleteButton?.removeFromSuperview()
+    }
+    @objc private func openFormatHelp(_ sender: NSButton) {
+        NSWorkspace.shared.open(URL(string: "https://www.nsdateformatter.com")!)
     }
 }

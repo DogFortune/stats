@@ -69,11 +69,37 @@
 "Square" = "สี่เหลี่ยม";
 "Cube" = "ลูกบาศก์";
 "Logarithmic" = "ลอการิทึม";
+"Fixed scale" = "Fixed";
 "Cores" = "หน่วยความจำ";
 "Settings" = "การตั้งค่า";
 "Name" = "Name";
 "Format" = "Format";
 "Turn off" = "Turn off";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "การตั้งค่าสถิติ";
@@ -105,6 +131,7 @@
 "Successfully updated" = "อัพเดทสำเร็จ";
 "Stats was updated to v" = "Stats อัพเดทเป็น v%0";
 "Reset settings text" = "การตั้งค่าของแอพพลิเคชันทั้งหมดจะถูกรีเซ็ตและแอพพลิเคชันจะเริ่มต้นใหม่ คุณแน่ใจหรือไม่ว่าต้องการดำเนินการนี้?";
+"Support text" = "ขอขอบคุณที่ใช้ Stats!\n\n การบำรุงรักษาและปรับปรุงโครงการโอเพนซอร์สนี้ต้องใช้เวลาและทรัพยากร การสนับสนุนของคุณช่วยให้เราสามารถให้บริการแอปพลิเคชันฟรีและเชื่อถือได้สำหรับทุกคนต่อไปได้\n\n หากคุณพบว่า Stats มีประโยชน์ โปรดพิจารณาให้ความช่วยเหลือ ทุก ๆ ความช่วยเหลือเล็ก ๆ น้อย ๆ ล้วนมีประโยชน์!";
 
 // Settings
 "Open Activity Monitor" = "เปิด Activity Monitor";
@@ -113,6 +140,9 @@
 "Close application" = "ปิดแอปพลิเคชัน";
 "Open application settings" = "เปิดการตั้งค่าแอปพลิเคชัน";
 "Open dashboard" = "เปิดแดชบอร์ด";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "อัพเดทแอปพลิเคชัน";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "แสดงไอคอนใน dock";
 "Start at login" = "เริ่มต้นเมื่อเข้าสู่ระบบ";
 "Build number" = "หมายเลข Build";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "รีเซ็ตการตั้งค่า";
 "Pause the Stats" = "หยุด Stats";
 "Resume the Stats" = "เริ่มต้น Stats";
 "Combined modules" = "โมดูลผสม";
+"Combined details" = "Combined details";
 "Spacing" = "Spacing";
 "Share anonymous telemetry" = "Share anonymous telemetry";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "หมายเลขซีเรียล";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "ระยะเวลาที่เครื่องทำงาน";
 "Number of cores" = "%0 cores";
 "Number of threads" = "%0 thread";
 "Number of e-cores" = "%0 cores ประสิทธิภาพ";
 "Number of p-cores" = "%0 cores ประสิทธิผล";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "เวอร์ชันล่าสุดของ Stats ได้รับการติดตั้งแล้ว";
@@ -173,6 +211,8 @@
 "Static width" = "ความกว้างคงที่";
 "Tachometer widget" = "วัดความเร็ว";
 "State widget" = "เครื่องวัดสถานะ";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "แสดงสัญลักษณ์";
 "Label widget" = "ป้ายชื่อ";
 "Number of reads in the chart" = "จำนวนการอ่านในแผนภูมิ";
@@ -180,6 +220,10 @@
 "Color of upload" = "สีของการอัพโหลด";
 "Monospaced font" = "แบบอักษรโมโนสเปซ";
 "Reverse order" = "Reverse order";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "เปิดการตั้งค่าโมดูล";
@@ -197,12 +241,19 @@
 "Merge widgets" = "รวมวิดเจ็ต";
 "No available widgets to configure" = "ไม่มีวิดเจ็ตที่สามารถกำหนดค่าได้";
 "No options to configure for the popup in this module" = "ไม่มีตัวเลือกที่สามารถกำหนดค่าสำหรับป๊อปอัปในโมดูลนี้";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "จำนวนของกระบวนการสูงสุด";
 "Update interval for top processes" = "ช่วงเวลาปรับปรุงสำหรับกระบวนการสูงสุด";
 "Notification level" = "ระดับแจ้งเตือน";
 "Chart color" = "สีแผนภูมิ";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "การใช้งาน CPU";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "การจัดกลุ่ม Cluster";
 "Efficiency cores color" = "Efficiency cores color";
 "Performance cores color" = "Performance cores color";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "แสดง GPU";
@@ -269,6 +326,9 @@
 "Wired color" = "สี Wired";
 "Compressed color" = "สีที่บีบอัด";
 "Free color" = "สีที่ว่าง";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "แสดงดิสก์ถอดได้";
@@ -282,6 +342,12 @@
 "Read color" = "Read color";
 "Write color" = "Write color";
 "Disk usage" = "Disk usage";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "หน่วยอุณหภูมิ";
@@ -299,6 +365,11 @@
 "Fan value" = "ค่าพัดลม";
 "Turn off fan" = "Turn off fan";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "กำลังอัปโหลด";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "สีของสถานะที่ไม่ใช้งาน";
 "Connectivity host (ICMP)" = "โฮสต์ที่เชื่อมต่อ (ICMP)";
 "Leave empty to disable the check" = "เว้นว่างไว้เพื่อปิดการตรวจสอบ";
-"Transparent pictogram when no activity" = "ไอคอนโปร่งใสเมื่อไม่มีกิจกรรม";
 "Connectivity history" = "Connectivity history";
 "Auto-refresh public IP address" = "Auto-refresh public IP address";
 "Every hour" = "Every hour";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Every 24 hours";
 "Network activity" = "Network activity";
 "Last reset" = "Last reset %0 ago";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "ระดับ";
@@ -377,6 +452,9 @@
 "Low power mode" = "โหมดพลังงานต่ำ";
 "Percentage inside the icon" = "เปอร์เซ็นต์ภายในไอคอน";
 "Colorize battery" = "Colorize battery";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "แบตเตอรี่ที่แสดง";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Time zone";
 "Local" = "Local";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "อ้างอิงจากการใช้งาน";

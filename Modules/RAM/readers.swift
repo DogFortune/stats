@@ -52,6 +52,8 @@ internal class UsageReader: Reader<RAM_Usage> {
             let compressed = Double(stats.compressor_page_count) * Double(vm_page_size)
             let purgeable = Double(stats.purgeable_count) * Double(vm_page_size)
             let external = Double(stats.external_page_count) * Double(vm_page_size)
+            let swapins = Int64(stats.swapins)
+            let swapouts = Int64(stats.swapouts)
             
             let used = active + inactive + speculative + wired + compressed - purgeable - external
             let free = self.totalSize - used
@@ -59,6 +61,13 @@ internal class UsageReader: Reader<RAM_Usage> {
             var intSize: size_t = MemoryLayout<uint>.size
             var pressureLevel: Int = 0
             sysctlbyname("kern.memorystatus_vm_pressure_level", &pressureLevel, &intSize, nil, 0)
+            
+            var pressureValue: RAMPressure
+            switch pressureLevel {
+            case 2: pressureValue = .warning
+            case 4: pressureValue = .critical
+            default: pressureValue = .normal
+            }
             
             var stringSize: size_t = MemoryLayout<xsw_usage>.size
             var swap: xsw_usage = xsw_usage()
@@ -76,15 +85,16 @@ internal class UsageReader: Reader<RAM_Usage> {
                 
                 app: used - wired - compressed,
                 cache: purgeable + external,
-                pressure: 100.0 * (wired + compressed) / self.totalSize,
-                
-                rawPressureLevel: UInt(pressureLevel),
                 
                 swap: Swap(
                     total: Double(swap.xsu_total),
                     used: Double(swap.xsu_used),
                     free: Double(swap.xsu_avail)
-                )
+                ),
+                pressure: Pressure(level: pressureLevel, value: pressureValue),
+                
+                swapins: swapins,
+                swapouts: swapouts
             ))
             return
         }
@@ -97,10 +107,14 @@ public class ProcessReader: Reader<[TopProcess]> {
     private let title: String = "RAM"
     
     private var numberOfProcesses: Int {
-        get {
-            return Store.shared.int(key: "\(self.title)_processes", defaultValue: 8)
-        }
+        get { Store.shared.int(key: "\(self.title)_processes", defaultValue: 8) }
     }
+    
+    private var combinedProcesses: Bool{
+        get { Store.shared.bool(key: "\(self.title)_combinedProcesses", defaultValue: false) }
+    }
+    
+    private typealias dynGetResponsiblePidFuncType = @convention(c) (CInt) -> CInt
     
     public override func setup() {
         self.popup = true
@@ -114,7 +128,11 @@ public class ProcessReader: Reader<[TopProcess]> {
         
         let task = Process()
         task.launchPath = "/usr/bin/top"
-        task.arguments = ["-l", "1", "-o", "mem", "-n", "\(self.numberOfProcesses)", "-stats", "pid,command,mem"]
+        if self.combinedProcesses {
+            task.arguments = ["-l", "1", "-o", "mem", "-stats", "pid,command,mem"]
+        } else {
+            task.arguments = ["-l", "1", "-o", "mem", "-n", "\(self.numberOfProcesses)", "-stats", "pid,command,mem"]
+        }
         
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -136,21 +154,75 @@ public class ProcessReader: Reader<[TopProcess]> {
         
         let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
         let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(decoding: outputData, as: UTF8.self)
-        _ = String(decoding: errorData, as: UTF8.self)
-        
-        if output.isEmpty {
-            return
-        }
+        let output = String(data: outputData, encoding: .utf8)
+        _ = String(data: errorData, encoding: .utf8)
+        guard let output, !output.isEmpty else { return }
         
         var processes: [TopProcess] = []
-        output.enumerateLines { (line, _) -> Void in
+        output.enumerateLines { (line, _) in
             if line.matches("^\\d+\\** +.* +\\d+[A-Z]*\\+?\\-? *$") {
                 processes.append(ProcessReader.parseProcess(line))
             }
         }
         
-        self.callback(processes)
+        if !self.combinedProcesses {
+            self.callback(processes)
+            return
+        }
+        
+        var processGroups: [String: [TopProcess]] = [:]
+        for process in processes {
+            let responsiblePid = ProcessReader.getResponsiblePid(process.pid)
+            let groupKey = "\(responsiblePid)"
+            
+            if processGroups[groupKey] != nil {
+                processGroups[groupKey]!.append(process)
+            } else {
+                processGroups[groupKey] = [process]
+            }
+        }
+        
+        var result: [TopProcess] = []
+        for (_, processes) in processGroups {
+            let totalUsage = processes.reduce(0) { $0 + $1.usage }
+            let firstProcess = processes.first!
+            let name: String
+            
+            if let app = NSRunningApplication(processIdentifier: pid_t(ProcessReader.getResponsiblePid(firstProcess.pid))),
+               let appName = app.localizedName {
+                name = appName
+            } else {
+                name = firstProcess.name
+            }
+            
+            result.append(TopProcess(
+                pid: ProcessReader.getResponsiblePid(firstProcess.pid),
+                name: name,
+                usage: totalUsage
+            ))
+        }
+        
+        result.sort { $0.usage > $1.usage }
+        self.callback(Array(result.prefix(self.numberOfProcesses)))
+    }
+    
+    private static let dynGetResponsiblePidFunc: UnsafeMutableRawPointer? = {
+        let result = dlsym(UnsafeMutableRawPointer(bitPattern: -1), "responsibility_get_pid_responsible_for_pid")
+        if result == nil {
+            error("Error loading responsibility_get_pid_responsible_for_pid")
+        }
+        return result
+    }()
+    
+    static func getResponsiblePid(_ childPid: Int) -> Int {
+        guard ProcessReader.dynGetResponsiblePidFunc != nil else {
+            return childPid
+        }
+        let responsiblePid = unsafeBitCast(ProcessReader.dynGetResponsiblePidFunc, to: dynGetResponsiblePidFuncType.self)(CInt(childPid))
+        guard responsiblePid != -1 else {
+            return childPid
+        }
+        return Int(responsiblePid)
     }
     
     static public func parseProcess(_ raw: String) -> TopProcess {
@@ -186,13 +258,20 @@ public class ProcessReader: Reader<[TopProcess]> {
             usage *= 1024 // apply gigabyte multiplier
         } else if usageString.last == "K" {
             usage /= 1024 // apply kilobyte divider
+        } else if usageString.last == "M" && usageString.count == 5 {
+            usage /= 1024
+            usage *= 1000
         }
         
         var name: String = command
-        if let app = NSRunningApplication(processIdentifier: pid_t(pid) ) {
-            name = app.localizedName ?? command
+        if let app = NSRunningApplication(processIdentifier: pid_t(pid)), let n = app.localizedName {
+            name = n
         }
         
-        return TopProcess(pid: pid, command: command, name: name, usage: usage * Double(1024 * 1024))
+        if command.contains("com.apple.Virtua") && name.contains("Docker") {
+            name = "Docker"
+        }
+        
+        return TopProcess(pid: pid, name: name, usage: usage * Double(1000 * 1000))
     }
 }

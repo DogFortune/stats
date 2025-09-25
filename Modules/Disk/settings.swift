@@ -12,12 +12,34 @@
 import Cocoa
 import Kit
 
-internal class Settings: NSStackView, Settings_v {
+var textWidgetHelp = """
+<h2>Description</h2>
+You can use a combination of any of the variables.
+<h3>Examples:</h3>
+<ul>
+<li>$capacity.free/$capacity.total</li>
+<li>Free: $capacity.free ($percentage.used)</li>
+<li>Used: $capacity.used ($percentage.used)</li>
+</ul>
+<h2>Available variables</h2>
+<ul>
+<li><b>$capacity.free</b>: <small>Free space of active drive.</small></li>
+<li><b>$capacity.used</b>: <small>Used space of active drive.</small></li>
+<li><b>$capacity.total</b>: <small>Total space of active drive.</small></li>
+<li><b>$percentage.free</b>: <small>Free space (percentage) of active drive.</small></li>
+<li><b>$percentage.used</b>: <small>Used space (percentage) of active drive.</small></li>
+</ul>
+"""
+
+internal class Settings: NSStackView, Settings_v, NSTextFieldDelegate {
+    private let title: String
+    
     private var removableState: Bool = false
     private var updateIntervalValue: Int = 10
-    private var notificationLevel: String = "Disabled"
     private var numberOfProcesses: Int = 5
     private var baseValue: String = "byte"
+    private var SMARTState: Bool = true
+    private var textValue: String = "$capacity.free/$capacity.total"
     
     public var selectedDiskHandler: (String) -> Void = {_ in }
     public var callback: (() -> Void) = {}
@@ -26,29 +48,25 @@ internal class Settings: NSStackView, Settings_v {
     
     private var selectedDisk: String
     private var button: NSPopUpButton?
-    private var intervalSelectView: NSView? = nil
     
     private var list: [String] = []
     
-    public init() {
-        self.selectedDisk = Store.shared.string(key: "\(Disk.name)_disk", defaultValue: "")
-        self.removableState = Store.shared.bool(key: "\(Disk.name)_removable", defaultValue: self.removableState)
-        self.updateIntervalValue = Store.shared.int(key: "\(Disk.name)_updateInterval", defaultValue: self.updateIntervalValue)
-        self.notificationLevel = Store.shared.string(key: "\(Disk.name)_notificationLevel", defaultValue: self.notificationLevel)
-        self.numberOfProcesses = Store.shared.int(key: "\(Disk.name)_processes", defaultValue: self.numberOfProcesses)
-        self.baseValue = Store.shared.string(key: "\(Disk.name)_base", defaultValue: self.baseValue)
+    private let textWidgetHelpPanel: HelpHUD = HelpHUD(textWidgetHelp)
+    
+    public init(_ module: ModuleType) {
+        self.title = module.stringValue
         
-        super.init(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+        self.selectedDisk = Store.shared.string(key: "\(self.title)_disk", defaultValue: "")
+        self.removableState = Store.shared.bool(key: "\(self.title)_removable", defaultValue: self.removableState)
+        self.updateIntervalValue = Store.shared.int(key: "\(self.title)_updateInterval", defaultValue: self.updateIntervalValue)
+        self.numberOfProcesses = Store.shared.int(key: "\(self.title)_processes", defaultValue: self.numberOfProcesses)
+        self.baseValue = Store.shared.string(key: "\(self.title)_base", defaultValue: self.baseValue)
+        self.SMARTState = Store.shared.bool(key: "\(self.title)_SMART", defaultValue: self.SMARTState)
+        self.textValue = Store.shared.string(key: "\(self.title)_textWidgetValue", defaultValue: self.textValue)
         
-        self.wantsLayer = true
+        super.init(frame: NSRect.zero)
+        
         self.orientation = .vertical
-        self.distribution = .gravityAreas
-        self.edgeInsets = NSEdgeInsets(
-            top: Constants.Settings.margin,
-            left: Constants.Settings.margin,
-            bottom: Constants.Settings.margin,
-            right: Constants.Settings.margin
-        )
         self.spacing = Constants.Settings.margin
     }
     
@@ -59,78 +77,68 @@ internal class Settings: NSStackView, Settings_v {
     public func load(widgets: [widget_t]) {
         self.subviews.forEach{ $0.removeFromSuperview() }
         
-        self.addArrangedSubview(selectSettingsRowV1(
-            title: localizedString("Number of top processes"),
-            action: #selector(changeNumberOfProcesses),
-            items: NumbersOfProcesses.map{ "\($0)" },
-            selected: "\(self.numberOfProcesses)"
-        ))
+        self.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Update interval"), component: selectView(
+                action: #selector(self.changeUpdateInterval),
+                items: ReaderUpdateIntervals,
+                selected: "\(self.updateIntervalValue)"
+            ))
+        ]))
         
-        self.intervalSelectView = selectSettingsRowV1(
-            title: localizedString("Update interval"),
-            action: #selector(changeUpdateInterval),
-            items: ReaderUpdateIntervals.map{ "\($0) sec" },
-            selected: "\(self.updateIntervalValue) sec"
+        self.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Number of top processes"), component: selectView(
+                action: #selector(self.changeNumberOfProcesses),
+                items: NumbersOfProcesses.map{ KeyValue_t(key: "\($0)", value: "\($0)") },
+                selected: "\(self.numberOfProcesses)"
+            ))
+        ]))
+        
+        self.button = selectView(
+            action: #selector(self.handleSelection),
+            items: [],
+            selected: ""
         )
-        self.addArrangedSubview(self.intervalSelectView!)
+        self.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Disk to show"), component: self.button!),
+            PreferencesRow(localizedString("Show removable disks"), component: switchView(
+                action: #selector(self.toggleRemovable),
+                state: self.removableState
+            ))
+        ]))
         
         if widgets.contains(where: { $0 == .speed }) {
-            self.addArrangedSubview(selectSettingsRow(
-                title: localizedString("Base"),
-                action: #selector(toggleBase),
-                items: SpeedBase,
-                selected: self.baseValue
-            ))
+            self.addArrangedSubview(PreferencesSection([
+                PreferencesRow(localizedString("Base"), component: selectView(
+                    action: #selector(self.toggleBase),
+                    items: SpeedBase,
+                    selected: self.baseValue
+                ))
+            ]))
         }
         
-        self.addDiskSelector()
+        self.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("SMART data"), component: switchView(
+                action: #selector(self.toggleSMART),
+                state: self.SMARTState
+            ))
+        ]))
         
-        self.addArrangedSubview(toggleSettingRow(
-            title: localizedString("Show removable disks"),
-            action: #selector(toggleRemovable),
-            state: self.removableState
-        ))
-        
-        self.addArrangedSubview(selectSettingsRow(
-            title: localizedString("Notification level"),
-            action: #selector(changeNotificationLevel),
-            items: notificationLevels,
-            selected: self.notificationLevel == "Disabled" ? self.notificationLevel : "\(Int((Double(self.notificationLevel) ?? 0)*100))%"
-        ))
-    }
-    
-    private func addDiskSelector() {
-        let view: NSStackView = NSStackView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.heightAnchor.constraint(equalToConstant: Constants.Settings.row).isActive = true
-        view.orientation = .horizontal
-        view.alignment = .centerY
-        view.distribution = .fill
-        view.spacing = 0
-        
-        let rowTitle: NSTextField = LabelField(frame: NSRect(x: 0, y: 0, width: 0, height: 17), localizedString("Disk to show"))
-        rowTitle.font = NSFont.systemFont(ofSize: 13, weight: .light)
-        rowTitle.textColor = .textColor
-        
-        self.button = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 0, height: 30))
-        self.button!.target = self
-        self.button?.action = #selector(self.handleSelection)
-        self.button?.addItems(withTitles: list)
-        
-        view.addArrangedSubview(rowTitle)
-        view.addArrangedSubview(NSView())
-        view.addArrangedSubview(self.button!)
-        
-        self.addArrangedSubview(view)
+        if widgets.contains(where: { $0 == .text }) {
+            let textField = self.inputField(id: "text", value: self.textValue, placeholder: localizedString("This will be visible in the text widget"))
+            self.addArrangedSubview(PreferencesSection([
+                PreferencesRow(localizedString("Text widget value"), component: textField) { [weak self] in
+                    self?.textWidgetHelpPanel.show()
+                }
+            ]))
+        }
     }
     
     internal func setList(_ list: Disks) {
-        let disks = list.map{ $0.mediaName }
         DispatchQueue.main.async(execute: {
+            let disks = list.map{ $0.mediaName }
             if self.button?.itemTitles.count != disks.count {
                 self.button?.removeAllItems()
             }
-            
             if disks != self.button?.itemTitles {
                 self.button?.addItems(withTitles: disks)
                 self.list = disks
@@ -141,52 +149,68 @@ internal class Settings: NSStackView, Settings_v {
         })
     }
     
+    private func inputField(id: String, value: String, placeholder: String) -> NSView {
+        let field: NSTextField = NSTextField()
+        field.identifier = NSUserInterfaceItemIdentifier(id)
+        field.widthAnchor.constraint(equalToConstant: 250).isActive = true
+        field.font = NSFont.systemFont(ofSize: 12, weight: .regular)
+        field.textColor = .textColor
+        field.isEditable = true
+        field.isSelectable = true
+        field.usesSingleLineMode = true
+        field.maximumNumberOfLines = 1
+        field.focusRingType = .none
+        field.stringValue = value
+        field.delegate = self
+        field.placeholderString = placeholder
+        return field
+    }
+    
     @objc private func changeNumberOfProcesses(_ sender: NSMenuItem) {
         if let value = Int(sender.title) {
             self.numberOfProcesses = value
-            Store.shared.set(key: "\(Disk.name)_processes", value: value)
+            Store.shared.set(key: "\(self.title)_processes", value: value)
             self.callbackWhenUpdateNumberOfProcesses()
         }
     }
-    
     @objc private func handleSelection(_ sender: NSPopUpButton) {
         guard let item = sender.selectedItem else { return }
         self.selectedDisk = item.title
-        Store.shared.set(key: "\(Disk.name)_disk", value: item.title)
+        Store.shared.set(key: "\(self.title)_disk", value: item.title)
         self.selectedDiskHandler(item.title)
     }
-    
     @objc private func toggleRemovable(_ sender: NSControl) {
         self.removableState = controlState(sender)
-        Store.shared.set(key: "\(Disk.name)_removable", value: self.removableState)
+        Store.shared.set(key: "\(self.title)_removable", value: self.removableState)
         self.callback()
     }
-    
     @objc private func changeUpdateInterval(_ sender: NSMenuItem) {
-        if let value = Int(sender.title.replacingOccurrences(of: " sec", with: "")) {
-            self.setUpdateInterval(value: value)
-        }
+        guard let key = sender.representedObject as? String, let value = Int(key) else { return }
+        self.setUpdateInterval(value: value)
     }
-    
-    @objc func changeNotificationLevel(_ sender: NSMenuItem) {
-        guard let key = sender.representedObject as? String else { return }
-        
-        if key == "Disabled" {
-            Store.shared.set(key: "\(Disk.name)_notificationLevel", value: key)
-        } else if let value = Double(key.replacingOccurrences(of: "%", with: "")) {
-            Store.shared.set(key: "\(Disk.name)_notificationLevel", value: "\(value/100)")
-        }
-    }
-    
     public func setUpdateInterval(value: Int) {
         self.updateIntervalValue = value
-        Store.shared.set(key: "\(Disk.name)_updateInterval", value: value)
+        Store.shared.set(key: "\(self.title)_updateInterval", value: value)
         self.setInterval(value)
     }
     
     @objc private func toggleBase(_ sender: NSMenuItem) {
         guard let key = sender.representedObject as? String else { return }
         self.baseValue = key
-        Store.shared.set(key: "\(Disk.name)_base", value: self.baseValue)
+        Store.shared.set(key: "\(self.title)_base", value: self.baseValue)
+    }
+    @objc private func toggleSMART(_ sender: NSControl) {
+        self.SMARTState = controlState(sender)
+        Store.shared.set(key: "\(self.title)_SMART", value: self.SMARTState)
+        self.callback()
+    }
+    
+    func controlTextDidChange(_ notification: Notification) {
+        if let field = notification.object as? NSTextField {
+            if field.identifier == NSUserInterfaceItemIdentifier("text") {
+                self.textValue = field.stringValue
+                Store.shared.set(key: "\(self.title)_textWidgetValue", value: self.textValue)
+            }
+        }
     }
 }

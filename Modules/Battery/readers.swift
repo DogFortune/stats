@@ -103,6 +103,11 @@ internal class UsageReader: Reader<Battery_Usage> {
                 }
                 self.usage.ACwatts = ACwatts
                 
+                if let chargerData = self.getChargerData() {
+                    self.usage.chargingCurrent = chargerData["ChargingCurrent"] as? Int ?? 0
+                    self.usage.chargingVoltage = chargerData["ChargingVoltage"] as? Int ?? 0
+                }
+                
                 self.callback(self.usage)
             }
         }
@@ -142,6 +147,13 @@ internal class UsageReader: Reader<Battery_Usage> {
         }
         return nil
     }
+    
+    private func getChargerData() -> [String: Any]? {
+        if let chargerData = IORegistryEntryCreateCFProperty(service, "ChargerData" as CFString, kCFAllocatorDefault, 0) {
+            return chargerData.takeRetainedValue() as? [String: Any]
+        }
+        return nil
+    }
 }
 
 public class ProcessReader: Reader<[TopProcess]> {
@@ -161,7 +173,6 @@ public class ProcessReader: Reader<[TopProcess]> {
         }
         
         let task = Process()
-        task.launchPath = "/bin/ps"
         task.launchPath = "/usr/bin/top"
         task.arguments = ["-o", "power", "-l", "2", "-n", "\(self.numberOfProcesses)", "-stats", "pid,command,power"]
         
@@ -183,31 +194,27 @@ public class ProcessReader: Reader<[TopProcess]> {
             return
         }
         
-        let output = String(decoding: outputData.advanced(by: outputData.count/2), as: UTF8.self)
-        if output.isEmpty {
-            return
-        }
+        let output = String(data: outputData.advanced(by: outputData.count/2), encoding: .utf8)
+        guard let output, !output.isEmpty else { return }
         
         var processes: [TopProcess] = []
-        output.enumerateLines { (line, _) -> Void in
+        output.enumerateLines { (line, _) in
             if line.matches("^\\d+ *[^(\\d)]*\\d+\\.*\\d* *$") {
-                var str = line.trimmingCharacters(in: .whitespaces)
-                
-                let pidString = str.findAndCrop(pattern: "^\\d+")
-                let usageString = str.findAndCrop(pattern: " +[0-9]+.*[0-9]*$")
-                let command = str.trimmingCharacters(in: .whitespaces)
-                
-                let pid = Int(pidString) ?? 0
-                guard let usage = Double(usageString.filter("01234567890.".contains)) else {
+                let str = line.trimmingCharacters(in: .whitespaces)
+                let pidFind = str.findAndCrop(pattern: "^\\d+")
+                let usageFind = pidFind.remain.findAndCrop(pattern: " +[0-9]+.*[0-9]*$")
+                let command = usageFind.remain.trimmingCharacters(in: .whitespaces)
+                let pid = Int(pidFind.cropped) ?? 0
+                guard let usage = Double(usageFind.cropped.filter("01234567890.".contains)) else {
                     return
                 }
                 
-                var name: String? = nil
-                if let app = NSRunningApplication(processIdentifier: pid_t(pid) ) {
-                    name = app.localizedName ?? nil
+                var name: String = command
+                if let app = NSRunningApplication(processIdentifier: pid_t(pid)), let n = app.localizedName {
+                    name = n
                 }
                 
-                processes.append(TopProcess(pid: pid, command: command, name: name, usage: usage))
+                processes.append(TopProcess(pid: pid, name: name, usage: usage))
             }
         }
         

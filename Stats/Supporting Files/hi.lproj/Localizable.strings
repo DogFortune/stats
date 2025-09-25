@@ -69,11 +69,37 @@
 "Square" = "वर्ग";
 "Cube" = "क्यूब";
 "Logarithmic" = "लघुगणकीय";
+"Fixed scale" = "Fixed";
 "Cores" = "कोर";
 "Settings" = "सेटिंग्स";
 "Name" = "नाम";
 "Format" = "प्रारूप";
 "Turn off" = "बंद करें";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "आँकड़े सेटअप";
@@ -105,6 +131,7 @@
 "Successfully updated" = "सफलतापूर्वक अपडेट किया गया";
 "Stats was updated to v" = "आँकड़े v पर अपडेट किए गए थे";
 "Reset settings text" = "Aसभी एप्लिकेशन सेटिंग्स रीसेट हो जाएंगी और एप्लिकेशन को पुनरारंभ किया जाएगा। क्या आप वाकई ऐसा करना चाहते हैं?";
+"Support text" = "Stats का उपयोग करने के लिए धन्यवाद!\n\n इस ओपन-सोर्स प्रोजेक्ट को बनाए रखने और सुधारने में समय और संसाधन लगते हैं। आपका समर्थन हमें सभी के लिए एक निःशुल्क और विश्वसनीय एप्लिकेशन प्रदान करना जारी रखने में मदद करता है.\n\nयदि आपको Stats मददगार लगता है, तो कृपया योगदान देने पर विचार करें। हर छोटी-छोटी मदद मददगार होती है!";
 
 // Settings
 "Open Activity Monitor" = "ओपन एक्टिविटी मॉनिटर";
@@ -113,6 +140,9 @@
 "Close application" = "आवेदन बंद करें";
 "Open application settings" = "ओपन एप्लिकेशन सेटिंग्स";
 "Open dashboard" = "ओपन डैशबोर्ड";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "अद्यतन अनुप्रयोग";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "डॉक में आइकन दिखाएं";
 "Start at login" = "लॉगिन पर शुरू करें";
 "Build number" = "बिल्ड नंबर";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "सेटिंग्स रीसेट करें";
 "Pause the Stats" = "आँकड़ों को रोकें";
 "Resume the Stats" = "आँकड़े फिर से शुरू करें";
 "Combined modules" = "संयुक्त मॉड्यूल";
+"Combined details" = "Combined details";
 "Spacing" = "स्पेसिंग";
 "Share anonymous telemetry" = "अनाम टेलीमेट्री साझा करें";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "सीरियल नंबर";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "अपटाइम";
 "Number of cores" = "%0 कोर";
 "Number of threads" = "%0 थ्रेड्स";
 "Number of e-cores" = "%0 दक्षता कोर";
 "Number of p-cores" = "%0 प्रदर्शन कोर";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "आँकड़े का नवीनतम संस्करण स्थापित है";
@@ -173,6 +211,8 @@
 "Static width" = "स्थैतिक चौड़ाई";
 "Tachometer widget" = "टैकोमीटर";
 "State widget" = "राज्य विजेट";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "प्रतीक दिखाएँ";
 "Label widget" = "लेबल";
 "Number of reads in the chart" = "चार्ट में पढ़ने की संख्या";
@@ -180,6 +220,10 @@
 "Color of upload" = "अपलोड का रंग";
 "Monospaced font" = "मोनोस्पेस्ड फ़ॉन्ट";
 "Reverse order" = "Reverse order";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "ओपन मॉड्यूल सेटिंग्स";
@@ -197,12 +241,19 @@
 "Merge widgets" = "मर्ज विजेट";
 "No available widgets to configure" = "कॉन्फ़िगर करने के लिए कोई उपलब्ध विजेट नहीं";
 "No options to configure for the popup in this module" = "इस मॉड्यूल में पॉपअप के लिए कॉन्फ़िगर करने के लिए कोई विकल्प नहीं";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "शीर्ष प्रक्रियाओं की संख्या";
 "Update interval for top processes" = "शीर्ष प्रक्रियाओं के लिए अंतराल अपडेट करें";
 "Notification level" = "अधिसूचना स्तर";
 "Chart color" = "चार्ट रंग";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "सीपीयू उपयोग";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "क्लस्टर समूहीकरण";
 "Efficiency cores color" = "दक्षता कोर रंग";
 "Performance cores color" = "प्रदर्शन कोर रंग";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "दिखाने के लिए जीपीयू";
@@ -269,6 +326,9 @@
 "Wired color" = "वायर्ड रंग";
 "Compressed color" = "संपीड़ित रंग";
 "Free color" = "मुक्त रंग";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "हटाने योग्य डिस्क दिखाएँ";
@@ -282,6 +342,12 @@
 "Read color" = "रंग पढ़ें";
 "Write color" = "रंग लिखें";
 "Disk usage" = "डिस्क उपयोग";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "तापमान इकाई";
@@ -299,6 +365,11 @@
 "Fan value" = "फैन वैल्यू";
 "Turn off fan" = "पंखा बंद करें";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "आप पंखे को बंद करने जा रहे हैं। यह अनुशंसित कार्रवाई नहीं है जो आपके मैक को नुकसान पहुंचा सकती है, क्या आप वाकई ऐसा करना चाहते हैं?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "अपलोड";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "नॉनएक्टिव स्टेट कलर";
 "Connectivity host (ICMP)" = "कनेक्टिविटी होस्ट (आईसीएमपी)";
 "Leave empty to disable the check" = "चेक को अक्षम करने के लिए खाली छोड़ दें";
-"Transparent pictogram when no activity" = "पारदर्शी चित्रांकन जब कोई गतिविधि नहीं होती है";
 "Connectivity history" = "कनेक्टिविटी इतिहास";
 "Auto-refresh public IP address" = "ऑटो-रिफ्रेश सार्वजनिक आईपी पता";
 "Every hour" = "हर घंटे";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "हर 24 घंटे";
 "Network activity" = "नेटवर्क गतिविधि";
 "Last reset" = "अंतिम रीसेट %0 पहले";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "स्तर";
@@ -377,6 +452,9 @@
 "Low power mode" = "कम शक्ति मोड";
 "Percentage inside the icon" = "आइकन के अंदर प्रतिशत";
 "Colorize battery" = "रंगीन बैटरी";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "दिखाने के लिए बैटरी";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "समय क्षेत्र";
 "Local" = "स्थानीय";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "उपयोग के आधार पर";

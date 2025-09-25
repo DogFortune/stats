@@ -21,7 +21,7 @@ public struct circle_segment {
     }
 }
 
-private func scaleValue(scale: Scale = .linear, value: Double, maxValue: Double, maxHeight: CGFloat) -> CGFloat {
+internal func scaleValue(scale: Scale = .linear, value: Double, maxValue: Double, zeroValue: Double, maxHeight: CGFloat, limit: Double) -> CGFloat {
     var value = value
     if scale == .none && value > 1 && maxValue != 0 {
         value /= maxValue
@@ -46,11 +46,16 @@ private func scaleValue(scale: Scale = .linear, value: Double, maxValue: Double,
         }
     case .logarithmic:
         if value > 0 {
-            value = log(value*100)
+            value = log(value/zeroValue)
         }
         if localMaxValue > 0 {
-            localMaxValue = log(maxValue*100)
+            localMaxValue = log(maxValue/zeroValue)
         }
+    case .fixed:
+        if value > limit {
+            value = limit
+        }
+        localMaxValue = limit
     default: break
     }
     
@@ -68,24 +73,86 @@ private func scaleValue(scale: Scale = .linear, value: Double, maxValue: Double,
     return y
 }
 
+private func drawToolTip(_ frame: NSRect, _ point: CGPoint, _ size: CGSize, value: String, subtitle: String? = nil) {
+    guard !value.isEmpty else { return }
+    
+    let style = NSMutableParagraphStyle()
+    style.alignment = .left
+    var position: CGPoint = point
+    let textHeight: CGFloat = subtitle != nil ? 22 : 12
+    let valueOffset: CGFloat = subtitle != nil ? 11 : 1
+    
+    position.x = max(frame.origin.x, min(position.x, frame.origin.x + frame.size.width - size.width))
+    position.y = max(frame.origin.y, min(position.y, frame.origin.y + frame.size.height - textHeight - 2))
+    
+    if position.x + size.width > frame.size.width+frame.origin.x {
+        position.x = point.x - size.width
+        style.alignment = .right
+    }
+    if position.y + textHeight > size.height {
+        position.y = point.y - textHeight - 20
+    }
+    if position.y < 2 {
+        position.y = 2
+    }
+    
+    let box = NSBezierPath(roundedRect: NSRect(x: position.x-3, y: position.y-2, width: size.width, height: textHeight+2), xRadius: 2, yRadius: 2)
+    NSColor.gray.setStroke()
+    box.stroke()
+    (isDarkMode ? NSColor.black : NSColor.white).withAlphaComponent(0.8).setFill()
+    box.fill()
+    
+    var attributes = [
+        NSAttributedString.Key.font: NSFont.systemFont(ofSize: 12, weight: .regular),
+        NSAttributedString.Key.foregroundColor: isDarkMode ? NSColor.white : NSColor.textColor
+    ]
+    var rect = CGRect(x: position.x, y: position.y+valueOffset, width: size.width, height: 12)
+    var str = NSAttributedString.init(string: value, attributes: attributes)
+    str.draw(with: rect)
+    
+    if let subtitle {
+        attributes[NSAttributedString.Key.font] = NSFont.systemFont(ofSize: 9, weight: .medium)
+        attributes[NSAttributedString.Key.foregroundColor] = (isDarkMode ? NSColor.white : NSColor.textColor).withAlphaComponent(0.7)
+        rect = CGRect(x: position.x, y: position.y, width: size.width-8, height: 9)
+        str = NSAttributedString.init(string: subtitle, attributes: attributes)
+        str.draw(with: rect)
+    }
+}
+
 public class LineChartView: NSView {
     public var id: String = UUID().uuidString
     
-    public var points: [Double]
-    public var shadowPoints: [Double] = []
+    private let dateFormatter = DateFormatter()
+    private var queue: DispatchQueue = DispatchQueue(label: "eu.exelban.Stats.charts.line", attributes: .concurrent)
+    
+    public var points: [DoubleValue?]
+    public var shadowPoints: [DoubleValue?] = []
     public var transparent: Bool = true
-    public var color: NSColor = .controlAccentColor
-    public var suffix: String = "%"
-    public var scale: Scale
+    public var flipY: Bool = false
+    public var minMax: Bool = false
+    public var color: NSColor
+    public var suffix: String
+    public var toolTipFunc: ((DoubleValue) -> String)?
+    public var isTooltipEnabled: Bool = true
+    
+    private var scale: Scale
+    private var fixedScale: Double
+    private var zeroValue: Double
     
     private var cursor: NSPoint? = nil
     private var stop: Bool = false
     
-    public init(frame: NSRect, num: Int, scale: Scale = .none) {
-        self.points = Array(repeating: 0, count: num)
+    public init(frame: NSRect, num: Int, suffix: String = "%", color: NSColor = .controlAccentColor, scale: Scale = .none, fixedScale: Double = 1, zeroValue: Double = 0.01) {
+        self.points = Array(repeating: nil, count: max(num, 1))
+        self.suffix = suffix
+        self.color = color
         self.scale = scale
+        self.fixedScale = fixedScale
+        self.zeroValue = zeroValue
         
         super.init(frame: frame)
+        
+        self.dateFormatter.dateFormat = "dd/MM HH:mm:ss"
         
         self.addTrackingArea(NSTrackingArea(
             rect: CGRect(x: 0, y: 0, width: self.frame.width, height: self.frame.height),
@@ -105,114 +172,166 @@ public class LineChartView: NSView {
     public override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         
-        var points = self.points
-        if self.stop {
-            points = self.shadowPoints
+        var originalPoints: [DoubleValue?] = []
+        var shadowPoints: [DoubleValue?] = []
+        var transparent: Bool = true
+        var flipY: Bool = false
+        var minMax: Bool = false
+        var color: NSColor = .controlAccentColor
+        var suffix: String = "%"
+        var toolTipFunc: ((DoubleValue) -> String)?
+        var isTooltipEnabled: Bool = true
+        self.queue.sync {
+            originalPoints = self.points
+            shadowPoints = self.shadowPoints
+            transparent = self.transparent
+            flipY = self.flipY
+            minMax = self.minMax
+            color = self.color
+            suffix = self.suffix
+            toolTipFunc = self.toolTipFunc
+            isTooltipEnabled = self.isTooltipEnabled
         }
-        guard let maxValue = points.max() else { return }
         
-        if points.isEmpty {
-            return
-        }
-        
-        let lineColor: NSColor = self.color
-        var gradientColor: NSColor = self.color.withAlphaComponent(0.5)
-        if !self.transparent {
-            gradientColor = self.color.withAlphaComponent(0.8)
-        }
-        
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        let points = stop ? shadowPoints : originalPoints
+        guard let context = NSGraphicsContext.current?.cgContext, !points.isEmpty else { return }
         context.setShouldAntialias(true)
+        let maxValue = points.compactMap { $0 }.max() ?? 0
+        
+        let lineColor: NSColor = color
+        var gradientColor: NSColor = color.withAlphaComponent(0.5)
+        if !transparent {
+            gradientColor = color.withAlphaComponent(0.8)
+        }
         
         let offset: CGFloat = 1 / (NSScreen.main?.backingScaleFactor ?? 1)
-        let height: CGFloat = self.frame.height - dirtyRect.origin.y - offset
+        let height: CGFloat = self.frame.height - offset
         let xRatio: CGFloat = self.frame.width / CGFloat(points.count-1)
+        let zero: CGFloat = flipY ? self.frame.height : 0
         
-        let list = points.enumerated().compactMap { (i: Int, v: Double) -> (value: Double, point: CGPoint) in
-            return (v, CGPoint(
+        var lines: [[CGPoint]] = []
+        var line: [CGPoint] = []
+        var list: [(value: DoubleValue, point: CGPoint)] = []
+        
+        for (i, v) in points.enumerated() {
+            guard let v else {
+                if !line.isEmpty {
+                    lines.append(line)
+                    line = []
+                }
+                continue
+            }
+            
+            var y = scaleValue(scale: scale, value: v.value, maxValue: maxValue, zeroValue: zeroValue, maxHeight: height, limit: fixedScale)
+            if flipY {
+                y = height - y
+            }
+            
+            let point = CGPoint(
                 x: (CGFloat(i) * xRatio) + dirtyRect.origin.x,
-                y: scaleValue(scale: self.scale, value: v, maxValue: maxValue, maxHeight: height) + dirtyRect.origin.y + offset
-            ))
+                y: y
+            )
+            line.append(point)
+            list.append((value: v, point: point))
+        }
+        if lines.isEmpty && !line.isEmpty {
+            lines.append(line)
         }
         
-        let line = NSBezierPath()
-        line.move(to: list[0].point)
-        
-        for i in 1..<points.count {
-            line.line(to: list[i].point)
-        }
-        line.line(to: list[list.count-1].point)
-        
-        lineColor.set()
-        line.lineWidth = offset
-        line.stroke()
-        
-        let underLinePath = line.copy() as! NSBezierPath
-        underLinePath.line(to: CGPoint(x: list[list.count-1].point.x, y: 0))
-        underLinePath.line(to: CGPoint(x: list[0].point.x, y: 0))
-        underLinePath.close()
-        gradientColor.set()
-        underLinePath.fill()
-        
-        if let p = self.cursor, let over = list.first(where: { $0.point.x >= p.x }), let under = list.last(where: { $0.point.x <= p.x }) {
-            guard p.y <= height else { return }
+        var path = NSBezierPath()
+        for linePoints in lines {
+            if linePoints.count == 1 {
+                path = NSBezierPath(ovalIn: CGRect(x: linePoints[0].x-offset, y: linePoints[0].y-offset, width: 1, height: 1))
+                lineColor.set()
+                path.stroke()
+                gradientColor.set()
+                path.fill()
+                continue
+            }
             
-            let diffOver = over.point.x - p.x
-            let diffUnder = p.x - under.point.x
-            let nearest = (diffOver < diffUnder) ? over : under
-            let vLine = NSBezierPath()
-            let hLine = NSBezierPath()
-            
-            vLine.setLineDash([4, 4], count: 2, phase: 0)
-            hLine.setLineDash([6, 6], count: 2, phase: 0)
-            
-            vLine.move(to: CGPoint(x: p.x, y: 0))
-            vLine.line(to: CGPoint(x: p.x, y: height))
-            vLine.close()
-            
-            hLine.move(to: CGPoint(x: 0, y: p.y))
-            hLine.line(to: CGPoint(x: self.frame.size.width+self.frame.origin.x, y: p.y))
-            hLine.close()
-            
-            NSColor.tertiaryLabelColor.set()
-            
-            vLine.lineWidth = offset
-            hLine.lineWidth = offset
-            
-            vLine.stroke()
-            hLine.stroke()
-            
-            let dotSize: CGFloat = 4
-            let path = NSBezierPath(ovalIn: CGRect(
-                x: nearest.point.x-(dotSize/2),
-                y: nearest.point.y-(dotSize/2),
-                width: dotSize,
-                height: dotSize
-            ))
-            NSColor.red.set()
+            path = NSBezierPath()
+            path.move(to: linePoints[0])
+            for i in 1..<linePoints.count {
+                path.line(to: linePoints[i])
+            }
+            lineColor.set()
+            path.lineWidth = offset
             path.stroke()
             
-            let style = NSMutableParagraphStyle()
-            style.alignment = .left
-            var textPosition: CGPoint = CGPoint(x: nearest.point.x+4, y: nearest.point.y+4)
-            
-            if textPosition.x + 24 > self.frame.size.width+self.frame.origin.x {
-                textPosition.x = nearest.point.x - 30
-                style.alignment = .right
-            }
-            if textPosition.y + 14 > height {
-                textPosition.y = nearest.point.y - 14
-            }
-            
+            path = path.copy() as! NSBezierPath
+            path.line(to: CGPoint(x: linePoints[linePoints.count-1].x, y: zero))
+            path.line(to: CGPoint(x: linePoints[0].x, y: zero))
+            path.close()
+            gradientColor.set()
+            path.fill()
+        }
+        
+        if minMax {
             let stringAttributes = [
-                NSAttributedString.Key.font: NSFont.systemFont(ofSize: 10, weight: .regular),
+                NSAttributedString.Key.font: NSFont.systemFont(ofSize: 9, weight: .light),
                 NSAttributedString.Key.foregroundColor: isDarkMode ? NSColor.white : NSColor.textColor,
-                NSAttributedString.Key.paragraphStyle: style
+                NSAttributedString.Key.paragraphStyle: NSMutableParagraphStyle()
             ]
-            let rect = CGRect(x: textPosition.x, y: textPosition.y, width: 26, height: 10)
-            let value = "\(Int(nearest.value.rounded(toPlaces: 2) * 100))\(self.suffix)"
-            let str = NSAttributedString.init(string: value, attributes: stringAttributes)
-            str.draw(with: rect)
+            
+            var str: String = ""
+            let flatList = originalPoints.map{ $0?.value ?? 0 }
+            if let value = flatList.max() {
+                str = toolTipFunc != nil ? toolTipFunc!(DoubleValue(value)) : "\(Int(value.rounded(toPlaces: 2) * 100))\(suffix)"
+            }
+            let textWidth = str.widthOfString(usingFont: stringAttributes[NSAttributedString.Key.font] as! NSFont)
+            let y = flipY ? 1 : height - 9
+            let rect = CGRect(x: 1, y: y, width: textWidth, height: 8)
+            NSAttributedString.init(string: str, attributes: stringAttributes).draw(with: rect)
+        }
+        
+        if isTooltipEnabled, let p = self.cursor, !list.isEmpty {
+            guard p.y <= height else { return }
+            
+            let overPoints = list.filter { $0.point.x >= p.x }
+            let underPoints = list.filter { $0.point.x <= p.x }
+            
+            if let over = overPoints.min(by: { $0.point.x < $1.point.x }), let under = underPoints.max(by: { $0.point.x < $1.point.x }) {
+                let diffOver = over.point.x - p.x
+                let diffUnder = p.x - under.point.x
+                let nearest = (diffOver < diffUnder) ? over : under
+                let vLine = NSBezierPath()
+                let hLine = NSBezierPath()
+                
+                vLine.setLineDash([4, 4], count: 2, phase: 0)
+                hLine.setLineDash([6, 6], count: 2, phase: 0)
+                
+                vLine.move(to: CGPoint(x: p.x, y: 0))
+                vLine.line(to: CGPoint(x: p.x, y: height))
+                vLine.close()
+                
+                hLine.move(to: CGPoint(x: 0, y: p.y))
+                hLine.line(to: CGPoint(x: self.frame.size.width, y: p.y))
+                hLine.close()
+                
+                NSColor.tertiaryLabelColor.set()
+                
+                vLine.lineWidth = offset
+                hLine.lineWidth = offset
+                
+                vLine.stroke()
+                hLine.stroke()
+                
+                let dotSize: CGFloat = 4
+                let path = NSBezierPath(ovalIn: CGRect(
+                    x: nearest.point.x-(dotSize/2),
+                    y: nearest.point.y-(dotSize/2),
+                    width: dotSize,
+                    height: dotSize
+                ))
+                NSColor.red.set()
+                path.stroke()
+                
+                let date = self.dateFormatter.string(from: nearest.value.ts)
+                let roundedValue = (nearest.value.value * 100).rounded(toPlaces: 2)
+                let strValue = roundedValue >= 1 ? "\(Int(roundedValue))\(suffix)" : "\(roundedValue)\(suffix)"
+                let value = toolTipFunc != nil ? toolTipFunc!(nearest.value) : strValue
+                drawToolTip(self.frame, CGPoint(x: nearest.point.x+4, y: nearest.point.y+4), CGSize(width: 78, height: height), value: value, subtitle: date)
+            }
         }
     }
     
@@ -230,13 +349,20 @@ public class LineChartView: NSView {
         super.updateTrackingAreas()
     }
     
-    public func addValue(_ value: Double) {
-        self.points.remove(at: 0)
-        self.points.append(value)
+    public func addValue(_ value: DoubleValue) {
+        self.queue.async(flags: .barrier) {
+            guard !self.points.isEmpty else { return }
+            self.points.remove(at: 0)
+            self.points.append(value)
+        }
         
         if self.window?.isVisible ?? false {
             self.display()
         }
+    }
+    
+    public func addValue(_ value: Double) {
+        self.addValue(DoubleValue(value))
     }
     
     public func reinit(_ num: Int = 60) {
@@ -246,226 +372,163 @@ public class LineChartView: NSView {
             self.points = Array(self.points[self.points.count-num..<self.points.count])
         } else {
             let origin = self.points
-            self.points = Array(repeating: 0.01, count: num)
-            self.points.replaceSubrange(Range(uncheckedBounds: (lower: origin.count, upper: num)), with: origin)
+            self.points = Array(repeating: nil, count: num)
+            self.points.replaceSubrange(Range(uncheckedBounds: (lower: num-origin.count, upper: num)), with: origin)
         }
     }
     
-    public func setScale(_ newScale: Scale) {
+    public func setScale(_ newScale: Scale, fixedScale: Double = 1) {
         self.scale = newScale
+        self.fixedScale = fixedScale
         if self.window?.isVisible ?? false {
             self.display()
         }
     }
     
     public override func mouseEntered(with event: NSEvent) {
+        guard self.isTooltipEnabled else { return }
         self.cursor = convert(event.locationInWindow, from: nil)
         self.needsDisplay = true
     }
     
     public override func mouseMoved(with event: NSEvent) {
+        guard self.isTooltipEnabled else { return }
         self.cursor = convert(event.locationInWindow, from: nil)
         self.needsDisplay = true
     }
     
     public override func mouseDragged(with event: NSEvent) {
+        guard self.isTooltipEnabled else { return }
         self.cursor = convert(event.locationInWindow, from: nil)
         self.needsDisplay = true
     }
     
     public override func mouseExited(with event: NSEvent) {
+        guard self.isTooltipEnabled else { return }
         self.cursor = nil
         self.needsDisplay = true
     }
     
     public override func mouseDown(with: NSEvent) {
+        guard self.isTooltipEnabled else { return }
         self.shadowPoints = self.points
         self.stop = true
     }
     public override func mouseUp(with: NSEvent) {
+        guard self.isTooltipEnabled else { return }
         self.stop = false
     }
 }
 
 public class NetworkChartView: NSView {
-    public var id: String = UUID().uuidString
     public var base: DataSizeBase = .byte
-    public var inColor: NSColor
-    public var outColor: NSColor
-    public var points: [(Double, Double)]
     
-    private var minMax: Bool = false
-    private var scale: Scale = .none
-    private var commonScale: Bool = true
+    private var reversedOrder: Bool
     
-    public init(frame: NSRect, num: Int, minMax: Bool = true, outColor: NSColor = .systemRed, inColor: NSColor = .systemBlue) {
-        self.minMax = minMax
-        self.points = Array(repeating: (0, 0), count: num)
-        self.outColor = outColor
-        self.inColor = inColor
+    private var inChart: LineChartView
+    private var outChart: LineChartView
+    
+    public init(frame: NSRect, num: Int, minMax: Bool = true, reversedOrder: Bool = false,
+                outColor: NSColor = .systemRed, inColor: NSColor = .systemBlue, scale: Scale = .none, fixedScale: Double = 1) {
+        self.reversedOrder = reversedOrder
+        
+        let safeHeight = max(frame.height, 2)
+        let topFrame = NSRect(x: frame.origin.x, y: safeHeight/2, width: frame.width, height: safeHeight/2)
+        let bottomFrame = NSRect(x: frame.origin.x, y: 0, width: frame.width, height: safeHeight/2)
+        let inFrame = self.reversedOrder ? topFrame : bottomFrame
+        let outFrame = self.reversedOrder ? bottomFrame : topFrame
+        self.inChart = LineChartView(frame: inFrame, num: num, color: inColor, scale: scale, fixedScale: fixedScale, zeroValue: 256.0)
+        self.outChart = LineChartView(frame: outFrame, num: num, color: outColor, scale: scale, fixedScale: fixedScale, zeroValue: 256.0)
+        
         super.init(frame: frame)
+        
+        self.inChart.minMax = minMax
+        self.outChart.minMax = minMax
+        
+        self.inChart.flipY = !self.reversedOrder
+        self.outChart.flipY = self.reversedOrder
+        
+        self.inChart.toolTipFunc = { v in
+            return Units(bytes: Int64(v.value)).getReadableSpeed(base: self.base)
+        }
+        self.outChart.toolTipFunc = { v in
+            return Units(bytes: Int64(v.value)).getReadableSpeed(base: self.base)
+        }
+        
+        self.addSubview(self.inChart)
+        self.addSubview(self.outChart)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-        context.setShouldAntialias(true)
-        
-        let points = self.points
-        var uploadMax: Double = points.map{ $0.0 }.max() ?? 0
-        var downloadMax: Double = points.map{ $0.1 }.max() ?? 0
-        if uploadMax == 0 {
-            uploadMax = 1
-        }
-        if downloadMax == 0 {
-            downloadMax = 1
-        }
-        
-        if !self.commonScale {
-            if downloadMax > uploadMax {
-                uploadMax = downloadMax
-            } else {
-                downloadMax = uploadMax
-            }
-        }
-        
-        let lineWidth = 1 / (NSScreen.main?.backingScaleFactor ?? 1)
-        let zero: CGFloat = (self.frame.height/2) + self.frame.origin.y
-        let xRatio: CGFloat = (self.frame.width + (lineWidth*3)) / CGFloat(points.count)
-        
-        let columnXPoint = { (point: Int) -> CGFloat in
-            return (CGFloat(point) * xRatio) + (self.frame.origin.x - lineWidth)
-        }
-        let uploadYPoint = { (point: Int) -> CGFloat in
-            return scaleValue(scale: self.scale, value: points[point].0, maxValue: uploadMax, maxHeight: self.frame.height/2) + (self.frame.height/2 + self.frame.origin.y)
-        }
-        let downloadYPoint = { (point: Int) -> CGFloat in
-            return (self.frame.height/2 + self.frame.origin.y) - scaleValue(scale: self.scale, value: points[point].1, maxValue: downloadMax, maxHeight: self.frame.height/2)
-        }
-        
-        let uploadlinePath = NSBezierPath()
-        uploadlinePath.move(to: CGPoint(x: columnXPoint(0), y: uploadYPoint(0)))
-        
-        let downloadlinePath = NSBezierPath()
-        downloadlinePath.move(to: CGPoint(x: columnXPoint(0), y: downloadYPoint(0)))
-        
-        for i in 1..<points.count {
-            uploadlinePath.line(to: CGPoint(x: columnXPoint(i), y: uploadYPoint(i)))
-            downloadlinePath.line(to: CGPoint(x: columnXPoint(i), y: downloadYPoint(i)))
-        }
-        
-        self.outColor.setStroke()
-        uploadlinePath.lineWidth = lineWidth
-        uploadlinePath.stroke()
-        
-        self.inColor.setStroke()
-        downloadlinePath.lineWidth = lineWidth
-        downloadlinePath.stroke()
-        
-        context.saveGState()
-        
-        var underLinePath = uploadlinePath.copy() as! NSBezierPath
-        underLinePath.line(to: CGPoint(x: columnXPoint(points.count), y: zero))
-        underLinePath.line(to: CGPoint(x: columnXPoint(0), y: zero))
-        underLinePath.close()
-        underLinePath.addClip()
-        self.outColor.withAlphaComponent(0.5).setFill()
-        NSBezierPath(rect: self.frame).fill()
-        
-        context.restoreGState()
-        context.saveGState()
-        
-        underLinePath = downloadlinePath.copy() as! NSBezierPath
-        underLinePath.line(to: CGPoint(x: columnXPoint(points.count), y: zero))
-        underLinePath.line(to: CGPoint(x: columnXPoint(0), y: zero))
-        underLinePath.close()
-        underLinePath.addClip()
-        self.inColor.withAlphaComponent(0.5).setFill()
-        NSBezierPath(rect: self.frame).fill()
-        
-        context.restoreGState()
-        
-        if self.minMax {
-            let stringAttributes = [
-                NSAttributedString.Key.font: NSFont.systemFont(ofSize: 9, weight: .light),
-                NSAttributedString.Key.foregroundColor: isDarkMode ? NSColor.white : NSColor.textColor,
-                NSAttributedString.Key.paragraphStyle: NSMutableParagraphStyle()
-            ]
-            let uploadText = Units(bytes: Int64(uploadMax)).getReadableSpeed(base: self.base)
-            let downloadText = Units(bytes: Int64(downloadMax)).getReadableSpeed(base: self.base)
-            let uploadTextWidth = uploadText.widthOfString(usingFont: stringAttributes[NSAttributedString.Key.font] as! NSFont)
-            let downloadTextWidth = downloadText.widthOfString(usingFont: stringAttributes[NSAttributedString.Key.font] as! NSFont)
-            
-            var rect = CGRect(x: 1, y: self.frame.height - 9, width: uploadTextWidth, height: 8)
-            NSAttributedString.init(string: uploadText, attributes: stringAttributes).draw(with: rect)
-            
-            rect = CGRect(x: 1, y: 2, width: downloadTextWidth, height: 8)
-            NSAttributedString.init(string: downloadText, attributes: stringAttributes).draw(with: rect)
-        }
-    }
-    
     public func addValue(upload: Double, download: Double) {
-        self.points.remove(at: 0)
-        self.points.append((upload, download))
-        
-        if self.window?.isVisible ?? false {
-            self.display()
-        }
+        self.inChart.addValue(DoubleValue(download))
+        self.outChart.addValue(DoubleValue(upload))
     }
     
     public func reinit(_ num: Int = 60) {
-        guard self.points.count != num else { return }
-        
-        if num < self.points.count {
-            self.points = Array(self.points[self.points.count-num..<self.points.count])
-        } else {
-            let origin = self.points
-            self.points = Array(repeating: (0, 0), count: num)
-            self.points.replaceSubrange(Range(uncheckedBounds: (lower: origin.count, upper: num)), with: origin)
-        }
+        self.inChart.reinit(num)
+        self.outChart.reinit(num)
     }
     
-    public func setScale(_ newScale: Scale, _ commonScale: Bool) {
-        self.scale = newScale
-        self.commonScale = commonScale
+    public func setScale(_ newScale: Scale, _ fixedScale: Double = 1) {
+        self.inChart.setScale(newScale, fixedScale: fixedScale)
+        self.outChart.setScale(newScale, fixedScale: fixedScale)
+    }
+    
+    public func setReverseOrder(_ newValue: Bool) {
+        guard self.reversedOrder != newValue else { return }
+        self.reversedOrder = newValue
         
-        if self.window?.isVisible ?? false {
-            self.display()
-        }
+        self.inChart.flipY = !self.reversedOrder
+        self.outChart.flipY = self.reversedOrder
+        
+        let safeHeight = max(frame.height, 2)
+        let topFrame = CGPoint(x: 0, y: safeHeight/2)
+        let bottomFrame = CGPoint(x: 0, y: 0)
+        self.inChart.setFrameOrigin(self.reversedOrder ? topFrame : bottomFrame)
+        self.outChart.setFrameOrigin(self.reversedOrder ? bottomFrame : topFrame)
+        
+        self.inChart.display()
+        self.outChart.display()
     }
     
     public func setColors(in inColor: NSColor? = nil, out outColor: NSColor? = nil) {
-        var needUpdate: Bool = false
+        if let inColor {
+            self.inChart.color = inColor
+        }
+        if let outColor {
+            self.outChart.color = outColor
+        }
+    }
+    
+    public func setTooltipState(_ newState: Bool) {
+        self.inChart.isTooltipEnabled = newState
+        self.outChart.isTooltipEnabled = newState
+    }
+    
+    public override func setFrameOrigin(_ newOrigin: NSPoint) {
+        super.setFrameOrigin(newOrigin)
         
-        if let newColor = inColor, self.inColor != newColor {
-            self.inColor = newColor
-            needUpdate = true
-        }
-        if let newColor = outColor, self.outColor != newColor {
-            self.outColor = newColor
-            needUpdate = true
-        }
+        let safeHeight = max(frame.height, 2)
+        let topFrame = CGPoint(x: 0, y: safeHeight/2)
+        let bottomFrame = CGPoint(x: 0, y: 0)
         
-        if needUpdate && self.window?.isVisible ?? false {
-            self.display()
-        }
+        self.inChart.setFrameOrigin(self.reversedOrder ? topFrame : bottomFrame)
+        self.outChart.setFrameOrigin(self.reversedOrder ? bottomFrame : topFrame)
     }
 }
 
 public class PieChartView: NSView {
-    public var id: String = UUID().uuidString
-    
     private var filled: Bool = false
     private var drawValue: Bool = false
     private var nonActiveSegmentColor: NSColor = NSColor.lightGray
     
     private var value: Double? = nil
     private var segments: [circle_segment] = []
+    private var queue: DispatchQueue = DispatchQueue(label: "eu.exelban.Stats.charts.pie")
     
     public init(frame: NSRect, segments: [circle_segment], filled: Bool = false, drawValue: Bool = false) {
         self.filled = filled
@@ -473,6 +536,8 @@ public class PieChartView: NSView {
         self.segments = segments
         
         super.init(frame: frame)
+        
+        self.setAccessibilityElement(true)
     }
     
     required init?(coder: NSCoder) {
@@ -480,12 +545,24 @@ public class PieChartView: NSView {
     }
     
     public override func draw(_ rect: CGRect) {
-        let arcWidth: CGFloat = self.filled ? min(self.frame.width, self.frame.height) / 2 : 7
+        var filled: Bool = false
+        var drawValue: Bool = false
+        var nonActiveSegmentColor: NSColor = NSColor.lightGray
+        var value: Double? = nil
+        var segments: [circle_segment] = []
+        self.queue.sync {
+            filled = self.filled
+            drawValue = self.drawValue
+            nonActiveSegmentColor = self.nonActiveSegmentColor
+            value = self.value
+            segments = self.segments
+        }
+        
+        let arcWidth: CGFloat = filled ? min(self.frame.width, self.frame.height) / 2 : 7
         let fullCircle = 2 * CGFloat.pi
-        var segments = self.segments
         let totalAmount = segments.reduce(0) { $0 + $1.value }
         if totalAmount < 1 {
-            segments.append(circle_segment(value: Double(1-totalAmount), color: self.nonActiveSegmentColor.withAlphaComponent(0.5)))
+            segments.append(circle_segment(value: Double(1-totalAmount), color: nonActiveSegmentColor.withAlphaComponent(0.5)))
         }
         
         let centerPoint = CGPoint(x: self.frame.width/2, y: self.frame.height/2)
@@ -510,7 +587,7 @@ public class PieChartView: NSView {
             previousAngle = currentAngle
         }
         
-        if let value = self.value, self.drawValue {
+        if let value = value, drawValue {
             let stringAttributes = [
                 NSAttributedString.Key.font: NSFont.systemFont(ofSize: 15, weight: .regular),
                 NSAttributedString.Key.foregroundColor: isDarkMode ? NSColor.white : NSColor.textColor,
@@ -526,14 +603,18 @@ public class PieChartView: NSView {
     }
     
     public func setValue(_ value: Double) {
-        self.value = value
+        self.queue.async(flags: .barrier) {
+            self.value = value
+        }
         if self.window?.isVisible ?? false {
             self.display()
         }
     }
     
     public func setSegments(_ segments: [circle_segment]) {
-        self.segments = segments
+        self.queue.async(flags: .barrier) {
+            self.segments = segments
+        }
         if self.window?.isVisible ?? false {
             self.display()
         }
@@ -547,7 +628,9 @@ public class PieChartView: NSView {
     
     public func setNonActiveSegmentColor(_ newColor: NSColor) {
         guard self.nonActiveSegmentColor != newColor else { return }
-        self.nonActiveSegmentColor = newColor
+        self.queue.async(flags: .barrier) {
+            self.nonActiveSegmentColor = newColor
+        }
         if self.window?.isVisible ?? false {
             self.display()
         }
@@ -559,10 +642,29 @@ public class HalfCircleGraphView: NSView {
     
     private var value: Double = 0.0
     private var text: String? = nil
+    private var queue: DispatchQueue = DispatchQueue(label: "eu.exelban.Stats.charts.halfcircle")
     
     public var color: NSColor = NSColor.systemBlue
     
+    public override init(frame: NSRect) {
+        super.init(frame: frame)
+        self.setAccessibilityElement(true)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     public override func draw(_ rect: CGRect) {
+        var value: Double = 0.0
+        var text: String? = nil
+        var color: NSColor = NSColor.systemBlue
+        self.queue.sync {
+            value = self.value
+            text = self.text
+            color = self.color
+        }
+        
         let arcWidth: CGFloat = 7.0
         let radius = (min(self.frame.width, self.frame.height) - arcWidth) / 2
         let centerPoint = CGPoint(x: self.frame.width/2, y: self.frame.height/2)
@@ -574,10 +676,10 @@ public class HalfCircleGraphView: NSView {
         context.setLineCap(.butt)
         
         var segments: [circle_segment] = [
-            circle_segment(value: self.value, color: self.color)
+            circle_segment(value: value, color: color)
         ]
-        if self.value < 1 {
-            segments.append(circle_segment(value: Double(1-self.value), color: NSColor.lightGray.withAlphaComponent(0.5)))
+        if value < 1 {
+            segments.append(circle_segment(value: Double(1-value), color: NSColor.lightGray.withAlphaComponent(0.5)))
         }
         
         let startAngle: CGFloat = -(1/4)*CGFloat.pi
@@ -600,7 +702,7 @@ public class HalfCircleGraphView: NSView {
         
         context.restoreGState()
         
-        if let text = self.text {
+        if let text = text {
             let style = NSMutableParagraphStyle()
             style.alignment = .center
             let stringAttributes = [
@@ -617,25 +719,30 @@ public class HalfCircleGraphView: NSView {
     }
     
     public func setValue(_ value: Double) {
-        self.value = value > 1 ? value/100 : value
+        self.queue.async(flags: .barrier) {
+            self.value = value > 1 ? value/100 : value
+        }
         if self.window?.isVisible ?? false {
             self.display()
         }
     }
     
     public func setText(_ value: String) {
-        self.text = value
+        self.queue.async(flags: .barrier) {
+            self.text = value
+        }
         if self.window?.isVisible ?? false {
             self.display()
         }
     }
 }
 
-public class TachometerGraphView: NSView {
+internal class TachometerGraphView: NSView {
     private var filled: Bool
     private var segments: [circle_segment]
+    private var queue: DispatchQueue = DispatchQueue(label: "eu.exelban.Stats.charts.tachometer")
     
-    public init(frame: NSRect, segments: [circle_segment], filled: Bool = true) {
+    internal init(frame: NSRect, segments: [circle_segment], filled: Bool = true) {
         self.filled = filled
         self.segments = segments
         
@@ -647,8 +754,14 @@ public class TachometerGraphView: NSView {
     }
     
     public override func draw(_ rect: CGRect) {
-        let arcWidth: CGFloat = self.filled ? min(self.frame.width, self.frame.height) / 2 : 7
-        var segments = self.segments
+        var filled: Bool = false
+        var segments: [circle_segment] = []
+        self.queue.sync {
+            filled = self.filled
+            segments = self.segments
+        }
+        
+        let arcWidth: CGFloat = filled ? min(self.frame.width, self.frame.height) / 2 : 7
         let totalAmount = segments.reduce(0) { $0 + $1.value }
         if totalAmount < 1 {
             segments.append(circle_segment(value: Double(1-totalAmount), color: NSColor.lightGray.withAlphaComponent(0.5)))
@@ -680,14 +793,16 @@ public class TachometerGraphView: NSView {
         }
     }
     
-    public func setSegments(_ segments: [circle_segment]) {
-        self.segments = segments
+    internal func setSegments(_ segments: [circle_segment]) {
+        self.queue.async(flags: .barrier) {
+            self.segments = segments
+        }
         if self.window?.isVisible ?? false {
             self.display()
         }
     }
     
-    public func setFrame(_ frame: NSRect) {
+    internal func setFrame(_ frame: NSRect) {
         var original = self.frame
         original = frame
         self.frame = original
@@ -696,10 +811,22 @@ public class TachometerGraphView: NSView {
 
 public class BarChartView: NSView {
     private var values: [ColorValue] = []
+    private var cursor: CGPoint? = nil
+    private var queue: DispatchQueue = DispatchQueue(label: "eu.exelban.Stats.charts.bar")
     
-    public init(frame: NSRect, num: Int) {
+    public init(frame: NSRect = NSRect.zero, num: Int) {
         super.init(frame: frame)
         self.values = Array(repeating: ColorValue(0, color: .controlAccentColor), count: num)
+        
+        self.addTrackingArea(NSTrackingArea(
+            rect: CGRect(x: 0, y: 0, width: self.frame.width, height: self.frame.height),
+            options: [
+                NSTrackingArea.Options.activeAlways,
+                NSTrackingArea.Options.mouseEnteredAndExited,
+                NSTrackingArea.Options.mouseMoved
+            ],
+            owner: self, userInfo: nil
+        ))
     }
     
     required init?(coder: NSCoder) {
@@ -707,14 +834,25 @@ public class BarChartView: NSView {
     }
     
     public override func draw(_ dirtyRect: NSRect) {
+        var values: [ColorValue] = []
+        self.queue.sync {
+            values = self.values
+        }
+        
+        guard !values.isEmpty else { return }
+        
         let blocks: Int = 16
         let spacing: CGFloat = 2
-        let count: CGFloat = CGFloat(self.values.count)
+        let count: CGFloat = CGFloat(values.count)
+        // swiftlint:disable:next empty_count
+        guard count > 0, self.frame.width > 0, self.frame.height > 0 else { return }
+        
         let partitionSize: CGSize = CGSize(width: (self.frame.width - (count*spacing)) / count, height: self.frame.height)
         let blockSize = CGSize(width: partitionSize.width-(spacing*2), height: ((partitionSize.height - spacing - 1)/CGFloat(blocks))-1)
         
+        var list: [(value: Double, path: NSBezierPath)] = []
         var x: CGFloat = 0
-        for i in 0..<self.values.count {
+        for i in 0..<values.count {
             let partition = NSBezierPath(
                 roundedRect: NSRect(x: x, y: 0, width: partitionSize.width, height: partitionSize.height),
                 xRadius: 3, yRadius: 3
@@ -723,31 +861,73 @@ public class BarChartView: NSView {
             partition.fill()
             partition.close()
             
-            let value = self.values[i]
+            let value = values[i]
             let color = value.color ?? .controlAccentColor
             let activeBlockNum = Int(round(value.value*Double(blocks)))
+            let h = value.value*(partitionSize.height-spacing)
             
-            var y: CGFloat = spacing
-            for b in 0..<blocks {
+            if dirtyRect.height < 30 && h != 0 {
                 let block = NSBezierPath(
-                    roundedRect: NSRect(x: x+spacing, y: y, width: blockSize.width, height: blockSize.height),
+                    roundedRect: NSRect(x: x+spacing, y: 1, width: partitionSize.width-(spacing*2), height: h),
                     xRadius: 1, yRadius: 1
                 )
-                (activeBlockNum <= b ? NSColor.controlBackgroundColor.withAlphaComponent(0.4) : color).setFill()
+                color.setFill()
                 block.fill()
                 block.close()
-                y += blockSize.height + 1
+            } else {
+                var y: CGFloat = spacing
+                for b in 0..<blocks {
+                    let block = NSBezierPath(
+                        roundedRect: NSRect(x: x+spacing, y: y, width: blockSize.width, height: blockSize.height),
+                        xRadius: 1, yRadius: 1
+                    )
+                    (activeBlockNum <= b ? NSColor.controlBackgroundColor.withAlphaComponent(0.4) : color).setFill()
+                    block.fill()
+                    block.close()
+                    y += blockSize.height + 1
+                }
             }
             
             x += partitionSize.width + spacing
+            list.append((value: value.value, path: partition))
+        }
+        
+        if let p = self.cursor {
+            let matchingBlock = list.first(where: { $0.path.contains(p) })
+            if let block = matchingBlock {
+                let value = "\(Int(block.value.rounded(toPlaces: 2) * 100))%"
+                let width: CGFloat = block.value == 1 ? 38 : block.value > 0.1 ? 32 : 24
+                let tooltipX = min(p.x+4, self.frame.width - width)
+                let tooltipY = min(p.y+4, self.frame.height - partitionSize.height)
+                drawToolTip(self.frame, CGPoint(x: tooltipX, y: tooltipY), CGSize(width: width, height: min(partitionSize.height, self.frame.height)), value: value)
+            }
         }
     }
     
     public func setValues(_ values: [ColorValue]) {
-        self.values = values
+        self.queue.async(flags: .barrier) {
+            self.values = values
+        }
         if self.window?.isVisible ?? false {
             self.display()
         }
+    }
+    
+    public override func mouseEntered(with event: NSEvent) {
+        self.cursor = convert(event.locationInWindow, from: nil)
+        self.display()
+    }
+    public override func mouseMoved(with event: NSEvent) {
+        self.cursor = convert(event.locationInWindow, from: nil)
+        self.display()
+    }
+    public override func mouseDragged(with event: NSEvent) {
+        self.cursor = convert(event.locationInWindow, from: nil)
+        self.display()
+    }
+    public override func mouseExited(with event: NSEvent) {
+        self.cursor = nil
+        self.display()
     }
 }
 
@@ -758,11 +938,13 @@ public class GridChartView: NSView {
     
     private var values: [NSColor] = []
     private let grid: (rows: Int, columns: Int)
+    private var queue: DispatchQueue = DispatchQueue(label: "eu.exelban.Stats.charts.grid")
     
     public init(frame: NSRect, grid: (rows: Int, columns: Int)) {
         self.grid = grid
         super.init(frame: frame)
-        self.values = Array(repeating: self.inactiveColor, count: grid.rows * grid.columns)
+        let totalCells = max(grid.rows * grid.columns, 1)
+        self.values = Array(repeating: self.inactiveColor, count: totalCells)
     }
     
     required init?(coder: NSCoder) {
@@ -770,18 +952,25 @@ public class GridChartView: NSView {
     }
     
     public override func draw(_ dirtyRect: NSRect) {
+        var grid: (rows: Int, columns: Int) = (0, 0)
+        var values: [NSColor] = []
+        self.queue.sync {
+            grid = self.grid
+            values = self.values
+        }
+        
         let spacing: CGFloat = 2
         let size: CGSize = CGSize(
-            width: (self.frame.width - ((CGFloat(self.grid.rows)-1) * spacing)) / CGFloat(self.grid.rows),
-            height: (self.frame.height - ((CGFloat(self.grid.columns)-1) * spacing)) / CGFloat(self.grid.columns)
+            width: (self.frame.width - ((CGFloat(grid.rows)-1) * spacing)) / CGFloat(grid.rows),
+            height: (self.frame.height - ((CGFloat(grid.columns)-1) * spacing)) / CGFloat(grid.columns)
         )
-        var origin: CGPoint = CGPoint(x: 0, y: (size.height + spacing) * CGFloat(self.grid.columns - 1))
+        var origin: CGPoint = CGPoint(x: 0, y: (size.height + spacing) * CGFloat(grid.columns - 1))
         
         var i: Int = 0
-        for _ in 0..<self.grid.columns {
-            for _ in 0..<self.grid.rows {
+        for _ in 0..<grid.columns {
+            for _ in 0..<grid.rows {
                 let box = NSBezierPath(roundedRect: NSRect(origin: origin, size: size), xRadius: 1, yRadius: 1)
-                self.values[i].setFill()
+                values[i].setFill()
                 box.fill()
                 box.close()
                 i += 1
@@ -793,8 +982,10 @@ public class GridChartView: NSView {
     }
     
     public func addValue(_ value: Bool) {
-        self.values.remove(at: 0)
-        self.values.append(value ? self.okColor : self.notOkColor)
+        self.queue.async(flags: .barrier) {
+            self.values.remove(at: 0)
+            self.values.append(value ? self.okColor : self.notOkColor)
+        }
         
         if self.window?.isVisible ?? false {
             self.display()

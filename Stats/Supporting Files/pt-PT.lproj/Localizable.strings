@@ -69,11 +69,37 @@
 "Square" = "Quadrado";
 "Cube" = "Cubo";
 "Logarithmic" = "Logarítmico";
+"Fixed scale" = "Fixed";
 "Cores" = "Cores";
 "Settings" = "Definições";
 "Name" = "Name";
 "Format" = "Format";
 "Turn off" = "Turn off";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "Configurações do Stats";
@@ -105,6 +131,7 @@
 "Successfully updated" = "Atualização feita com sucesso";
 "Stats was updated to v" = "Stats foi atualizado para v%0";
 "Reset settings text" = "Todas as configurações da aplicação serão restabelecidas e a aplicação será reiniciada. Tens a certeza que queres fazer isso?";
+"Support text" = "Obrigado por utilizar o Stats!\n\nA manutenção e melhoria deste projeto de código aberto requer tempo e recursos. O seu apoio ajuda-nos a continuar a fornecer uma aplicação gratuita e fiável para todos.\n\nSe considera o Stats útil, por favor considere fazer uma contribuição. Cada pedacinho ajuda!";
 
 // Settings
 "Open Activity Monitor" = "Abrir Monitor de Atividades";
@@ -113,6 +140,9 @@
 "Close application" = "Fechar aplicação";
 "Open application settings" = "Abrir definições da aplicação";
 "Open dashboard" = "Abrir o painel";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "Atualizar a aplicação";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "Mostrar ícone na Dock";
 "Start at login" = "Iniciar durante login";
 "Build number" = "Número do Build";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "Restabelecer as definições";
 "Pause the Stats" = "Pausar o Stats";
 "Resume the Stats" = "Resumir o Stats";
 "Combined modules" = "Módulos combinados";
+"Combined details" = "Combined details";
 "Spacing" = "Espaçamento";
 "Share anonymous telemetry" = "Share anonymous telemetry";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "Número de série";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "Tempo de atividade";
 "Number of cores" = "%0 cores";
 "Number of threads" = "%0 threads";
 "Number of e-cores" = "%0 efficiency cores";
 "Number of p-cores" = "%0 performance cores";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "A versão mais recente do Stats instalada";
@@ -173,6 +211,8 @@
 "Static width" = "Largura estática";
 "Tachometer widget" = "Widget de tacómetro";
 "State widget" = "Widget de estados";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "Mostrar simbolos";
 "Label widget" = "Widget de etiquetas";
 "Number of reads in the chart" = "Número de leituras no gráfico";
@@ -180,6 +220,10 @@
 "Color of upload" = "Cor do upload";
 "Monospaced font" = "Monospaced font";
 "Reverse order" = "Reverse order";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "Abrir definições do módulo";
@@ -197,12 +241,19 @@
 "Merge widgets" = "Agrupar widgets";
 "No available widgets to configure" = "Não foram encontrados widgets para configurar";
 "No options to configure for the popup in this module" = "Não foram encontradas opções para configurar para o popup deste módulo";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "Número de processos principais";
 "Update interval for top processes" = "Intervalo de atualização para os processos principais";
 "Notification level" = "Nível de notificação";
 "Chart color" = "Cor do gráfico";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "Utilização do CPU";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "Agrupamento de cluster";
 "Efficiency cores color" = "Efficiency cores color";
 "Performance cores color" = "Performance cores color";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "GPU para mostrar";
@@ -269,6 +326,9 @@
 "Wired color" = "Cor por fio";
 "Compressed color" = "Cor comprimida";
 "Free color" = "Cor grátis";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "Mostrar discos removíveis";
@@ -282,6 +342,12 @@
 "Read color" = "Read color";
 "Write color" = "Write color";
 "Disk usage" = "Disk usage";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "Unidade de temperatura";
@@ -299,6 +365,11 @@
 "Fan value" = "Valor da ventoinha";
 "Turn off fan" = "Turn off fan";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "Enviando";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "Cor do estado inativo";
 "Connectivity host (ICMP)" = "Host da conexão (ICMP)";
 "Leave empty to disable the check" = "Deixar vazio para desativar o check";
-"Transparent pictogram when no activity" = "Pictograma transparente quando não há atividade";
 "Connectivity history" = "Connectivity history";
 "Auto-refresh public IP address" = "Auto-refresh public IP address";
 "Every hour" = "Every hour";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Every 24 hours";
 "Network activity" = "Network activity";
 "Last reset" = "Last reset %0 ago";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "Nível";
@@ -377,6 +452,9 @@
 "Low power mode" = "Modo poupança de energia";
 "Percentage inside the icon" = "Percentagem dentro do ícone";
 "Colorize battery" = "Colorize battery";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "Mostrar bateria";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Time zone";
 "Local" = "Local";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "Baseado na utilização";

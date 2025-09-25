@@ -15,10 +15,10 @@ import Kit
 private let setupSize: CGSize = CGSize(width: 600, height: 400)
 
 internal class SetupWindow: NSWindow, NSWindowDelegate {
+    internal var finishHandler: () -> Void = {}
+    
     private let view: SetupContainer = SetupContainer()
     private let vc: NSViewController = NSViewController(nibName: nil, bundle: nil)
-    
-    public var finishHandler: () -> Void = {}
     
     init() {
         self.vc.view = self.view
@@ -44,12 +44,12 @@ internal class SetupWindow: NSWindow, NSWindowDelegate {
         windowController.loadWindow()
     }
     
-    public func show() {
+    internal func show() {
         self.setIsVisible(true)
         self.orderFrontRegardless()
     }
     
-    public func hide() {
+    internal func hide() {
         self.close()
     }
     
@@ -60,7 +60,7 @@ internal class SetupWindow: NSWindow, NSWindowDelegate {
     private func positionCenter() {
         self.setFrameOrigin(NSPoint(
             x: (NSScreen.main!.frame.width - self.view.frame.width)/2,
-            y: (NSScreen.main!.frame.height - self.view.frame.height)/2
+            y: (NSScreen.main!.frame.height - self.view.frame.height)/1.75
         ))
     }
 }
@@ -400,12 +400,12 @@ private class SetupView_4: NSStackView {
         
         container.addRow(with: [self.option(
             tag: 1,
-            state: telemetry.isEnabled,
+            state: Telemetry.shared.isEnabled,
             text: localizedString("Share anonymous telemetry data")
         )])
         container.addRow(with: [self.option(
             tag: 2,
-            state: !telemetry.isEnabled,
+            state: !Telemetry.shared.isEnabled,
             text: localizedString("Do not share anonymous telemetry data")
         )])
         
@@ -427,7 +427,7 @@ private class SetupView_4: NSStackView {
     }
     
     @objc private func toggle(_ sender: NSButton) {
-        telemetry.isEnabled = sender.tag == 1
+        Telemetry.shared.isEnabled = sender.tag == 1
     }
 }
 
@@ -496,10 +496,10 @@ private class SetupView_end: NSStackView {
     }
 }
 
-public class SupportButtonView: NSButton {
-    public var callback: (() -> Void) = {}
+internal class SupportButtonView: NSButton {
+    internal var callback: (() -> Void) = {}
     
-    public init(name: String, image: String, action: @escaping () -> Void) {
+    init(name: String, image: String, action: @escaping () -> Void) {
         self.callback = action
         
         super.init(frame: NSRect(x: 0, y: 0, width: 30, height: 30))
@@ -544,7 +544,7 @@ public class SupportButtonView: NSButton {
         NSCursor.arrow.set()
     }
     
-    @objc private func click(_ sender: NSControl) {
+    @objc private func click() {
         self.callback()
     }
 }

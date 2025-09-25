@@ -26,8 +26,9 @@ public enum widget_t: String {
     case label = "label"
     case tachometer = "tachometer"
     case state = "state"
+    case text = "text"
     
-    public func new(module: String, config: NSDictionary, defaultWidget: widget_t) -> Widget? {
+    public func new(module: String, config: NSDictionary, defaultWidget: widget_t) -> SWidget? {
         guard let widgetConfig: NSDictionary = config[self.rawValue] as? NSDictionary else { return nil }
         
         var image: NSImage? = nil
@@ -54,11 +55,11 @@ public enum widget_t: String {
             preview = SpeedWidget(title: module, config: widgetConfig, preview: true)
             item = SpeedWidget(title: module, config: widgetConfig, preview: false)
         case .battery:
-            preview = BatteryWidget(title: module, config: widgetConfig, preview: true)
-            item = BatteryWidget(title: module, config: widgetConfig, preview: false)
+            preview = BatteryWidget(title: module, preview: true)
+            item = BatteryWidget(title: module, preview: false)
         case .batteryDetails:
-            preview = BatteryDetailsWidget(title: module, config: widgetConfig, preview: true)
-            item = BatteryDetailsWidget(title: module, config: widgetConfig, preview: false)
+            preview = BatteryDetailsWidget(title: module, preview: true)
+            item = BatteryDetailsWidget(title: module, preview: false)
         case .stack:
             preview = StackWidget(title: module, config: widgetConfig, preview: true)
             item = StackWidget(title: module, config: widgetConfig, preview: false)
@@ -66,14 +67,17 @@ public enum widget_t: String {
             preview = MemoryWidget(title: module, config: widgetConfig, preview: true)
             item = MemoryWidget(title: module, config: widgetConfig, preview: false)
         case .label:
-            preview = Label(title: module, config: widgetConfig, preview: true)
-            item = Label(title: module, config: widgetConfig, preview: false)
+            preview = Label(title: module, config: widgetConfig)
+            item = Label(title: module, config: widgetConfig)
         case .tachometer:
-            preview = Tachometer(title: module, config: widgetConfig, preview: true)
-            item = Tachometer(title: module, config: widgetConfig, preview: false)
+            preview = Tachometer(title: module, preview: true)
+            item = Tachometer(title: module, preview: false)
         case .state:
             preview = StateWidget(title: module, config: widgetConfig, preview: true)
             item = StateWidget(title: module, config: widgetConfig, preview: false)
+        case .text:
+            preview = TextWidget(title: module, config: widgetConfig, preview: true)
+            item = TextWidget(title: module, config: widgetConfig, preview: false)
         default: break
         }
         
@@ -116,7 +120,7 @@ public enum widget_t: String {
         }
         
         if let item = item, let image = image {
-            return Widget(self, defaultWidget: defaultWidget, module: module, item: item, image: image)
+            return SWidget(self, defaultWidget: defaultWidget, module: module, item: item, image: image)
         }
         
         return nil
@@ -137,6 +141,7 @@ public enum widget_t: String {
         case .label: return localizedString("Label widget")
         case .tachometer: return localizedString("Tachometer widget")
         case .state: return localizedString("State widget")
+        case .text: return localizedString("Text widget")
         default: return ""
         }
     }
@@ -144,21 +149,17 @@ public enum widget_t: String {
 extension widget_t: CaseIterable {}
 
 public protocol widget_p: NSView {
-    var type: widget_t { get }
-    var title: String { get }
-    var position: Int { get set }
-    
     var widthHandler: (() -> Void)? { get set }
+    var onClick: (() -> Void)? { get set }
     
-    func setValues(_ values: [value_t])
     func settings() -> NSView
 }
 
 open class WidgetWrapper: NSView, widget_p {
     public var type: widget_t
     public var title: String
-    public var position: Int = -1
     public var widthHandler: (() -> Void)? = nil
+    public var onClick: (() -> Void)? = nil
     public var shadowSize: CGSize
     internal var queue: DispatchQueue
     
@@ -212,13 +213,18 @@ open class WidgetWrapper: NSView, widget_p {
         return width
     }
     
-    // MARK: - stubs
-    
     open func settings() -> NSView { return NSView() }
-    open func setValues(_ values: [value_t]) {}
+    
+    open override func mouseDown(with event: NSEvent) {
+        if let f = self.onClick {
+            f()
+            return
+        }
+        super.mouseDown(with: event)
+    }
 }
 
-public class Widget {
+public class SWidget {
     public let type: widget_t
     public let defaultWidget: widget_t
     public let module: String
@@ -226,9 +232,7 @@ public class Widget {
     public var item: widget_p
     
     public var isActive: Bool {
-        get {
-            self.list.contains{ $0 == self.type }
-        }
+        get { self.list.contains{ $0 == self.type } }
         set {
             if newValue {
                 self.list.append(self.type)
@@ -245,12 +249,8 @@ public class Widget {
         NextLog.shared.copy(category: self.module)
     }
     public var position: Int {
-        get {
-            Store.shared.int(key: "\(self.module)_\(self.type)_position", defaultValue: 0)
-        }
-        set {
-            Store.shared.set(key: "\(self.module)_\(self.type)_position", value: newValue)
-        }
+        get { Store.shared.int(key: "\(self.module)_\(self.type)_position", defaultValue: 0) }
+        set { Store.shared.set(key: "\(self.module)_\(self.type)_position", value: newValue) }
     }
     
     private var list: [widget_t] {
@@ -258,12 +258,9 @@ public class Widget {
             let string = Store.shared.string(key: "\(self.module)_widget", defaultValue: self.defaultWidget.rawValue)
             return string.split(separator: ",").map{ (widget_t(rawValue: String($0)) ?? .unknown)}
         }
-        set {
-            Store.shared.set(key: "\(self.module)_widget", value: newValue.map{ $0.rawValue }.joined(separator: ","))
-        }
+        set { Store.shared.set(key: "\(self.module)_widget", value: newValue.map{ $0.rawValue }.joined(separator: ",")) }
     }
     
-    private var config: NSDictionary = NSDictionary()
     private var menuBarItem: NSStatusItem? = nil
     private var originX: CGFloat
     
@@ -337,6 +334,8 @@ public class Widget {
                     self.item.setFrameOrigin(NSPoint(x: self.originX, y: self.item.frame.origin.y))
                 }
                 self.menuBarItem?.button?.addSubview(self.item)
+                self.menuBarItem?.button?.image = NSImage()
+                self.menuBarItem?.button?.toolTip = "\(localizedString(self.module)): \(self.type.name())"
                 
                 if let item = self.menuBarItem, !item.isVisible {
                     self.menuBarItem?.isVisible = true
@@ -353,7 +352,7 @@ public class Widget {
         }
     }
     
-    @objc private func togglePopup(_ sender: Any) {
+    @objc private func togglePopup() {
         if let item = self.menuBarItem, let window = item.button?.window {
             NotificationCenter.default.post(name: .togglePopup, object: nil, userInfo: [
                 "module": self.module,
@@ -367,7 +366,7 @@ public class Widget {
 
 public class MenuBar {
     public var callback: (() -> Void)? = nil
-    public var widgets: [Widget] = []
+    public var widgets: [SWidget] = []
     
     private var moduleName: String
     private var menuBarItem: NSStatusItem? = nil
@@ -379,13 +378,13 @@ public class MenuBar {
     
     public var view: MenuBarView = MenuBarView()
     public var oneView: Bool = false
-    public var activeWidgets: [Widget] {
+    public var activeWidgets: [SWidget] {
         self.widgets.filter({ $0.isActive })
     }
     public var sortedWidgets: [widget_t] {
         get {
             var list: [widget_t: Int] = [:]
-            self.activeWidgets.forEach { (w: Widget) in
+            self.activeWidgets.forEach { (w: SWidget) in
                 list[w.type] = w.position
             }
             return list.sorted { $0.1 < $1.1 }.map{ $0.key }
@@ -423,14 +422,14 @@ public class MenuBar {
         NotificationCenter.default.removeObserver(self, name: .widgetRearrange, object: nil)
     }
     
-    public func append(_ widget: Widget) {
+    public func append(_ widget: SWidget) {
         widget.toggleCallback = { [weak self] (type, state) in
             if let s = self, s.oneView {
                 if state, let w = s.activeWidgets.first(where: { $0.type == type }) {
                     DispatchQueue.main.async(execute: {
                         s.recalculateWidth()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            s.view.addWidget(w.item, position: w.position)
+                            s.view.addWidget(w.item)
                             s.view.recalculate(s.sortedWidgets)
                         }
                     })
@@ -480,6 +479,8 @@ public class MenuBar {
                 self.menuBarItem?.isVisible = true
                 
                 self.menuBarItem?.button?.addSubview(self.view)
+                self.menuBarItem?.button?.image = NSImage()
+                self.menuBarItem?.button?.toolTip = "\(localizedString(self.moduleName))"
                 self.menuBarItem?.button?.target = self
                 self.menuBarItem?.button?.action = #selector(self.togglePopup)
                 self.menuBarItem?.button?.sendAction(on: [.leftMouseDown, .rightMouseDown])
@@ -507,7 +508,7 @@ public class MenuBar {
         self.callback?()
     }
     
-    @objc private func togglePopup(_ sender: Any) {
+    @objc private func togglePopup() {
         if let item = self.menuBarItem, let window = item.button?.window {
             NotificationCenter.default.post(name: .togglePopup, object: nil, userInfo: [
                 "module": self.moduleName,
@@ -526,7 +527,7 @@ public class MenuBar {
     }
     
     private func toggleOneView() {
-        self.activeWidgets.forEach { (w: Widget) in
+        self.activeWidgets.forEach { (w: SWidget) in
             w.disable()
         }
         
@@ -538,7 +539,7 @@ public class MenuBar {
             self.setupMenuBarItem(self.oneView)
         }
         
-        self.activeWidgets.forEach { (w: Widget) in
+        self.activeWidgets.forEach { (w: SWidget) in
             w.enable()
         }
     }
@@ -560,15 +561,13 @@ public class MenuBarView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func addWidget(_ view: NSView, position: Int) {
+    public func addWidget(_ view: NSView) {
         self.addSubview(view)
     }
     
     public func removeWidget(type: widget_t) {
         if let view = self.subviews.first(where: { $0.identifier == NSUserInterfaceItemIdentifier(type.rawValue) }) {
             view.removeFromSuperview()
-        } else {
-            error("\(type) could not be removed from the one view because not found!")
         }
     }
     

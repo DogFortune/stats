@@ -15,15 +15,17 @@ public class BarChart: WidgetWrapper {
     private var labelState: Bool = false
     private var boxState: Bool = true
     private var frameState: Bool = false
-    public var colorState: Color = .systemAccent
-    private var colors: [Color] = Color.allCases
+    public var colorState: SColor = .systemAccent
+    private var colors: [SColor] = SColor.allCases
     
     private var _value: [[ColorValue]] = [[]]
-    private var _pressureLevel: DispatchSource.MemoryPressureEvent = .normal
+    private var _pressureLevel: RAMPressure = .normal
     private var _colorZones: colorZones = (0.6, 0.8)
     
-    private var boxSettingsView: NSView? = nil
-    private var frameSettingsView: NSView? = nil
+    private var boxSettingsView: NSSwitch? = nil
+    private var frameSettingsView: NSSwitch? = nil
+    
+    public var NSLabelCharts: [NSAttributedString] = []
     
     public init(title: String, config: NSDictionary?, preview: Bool = false) {
         var widgetTitle: String = title
@@ -72,7 +74,7 @@ public class BarChart: WidgetWrapper {
             self.boxState = Store.shared.bool(key: "\(self.title)_\(self.type.rawValue)_box", defaultValue: self.boxState)
             self.frameState = Store.shared.bool(key: "\(self.title)_\(self.type.rawValue)_frame", defaultValue: self.frameState)
             self.labelState = Store.shared.bool(key: "\(self.title)_\(self.type.rawValue)_label", defaultValue: self.labelState)
-            self.colorState = Color.fromString(Store.shared.string(key: "\(self.title)_\(self.type.rawValue)_color", defaultValue: self.colorState.key))
+            self.colorState = SColor.fromString(Store.shared.string(key: "\(self.title)_\(self.type.rawValue)_color", defaultValue: self.colorState.key))
         }
         
         if preview {
@@ -82,6 +84,19 @@ public class BarChart: WidgetWrapper {
             self.setFrameSize(NSSize(width: 36, height: self.frame.size.height))
             self.invalidateIntrinsicContentSize()
             self.display()
+        }
+        
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        let stringAttributes = [
+            NSAttributedString.Key.font: NSFont.systemFont(ofSize: 7, weight: .regular),
+            NSAttributedString.Key.foregroundColor: NSColor.textColor,
+            NSAttributedString.Key.paragraphStyle: style
+        ]
+        
+        for char in String(self.title.prefix(3)).uppercased().reversed() {
+            let str = NSAttributedString.init(string: "\(char)", attributes: stringAttributes)
+            self.NSLabelCharts.append(str)
         }
     }
     
@@ -93,12 +108,17 @@ public class BarChart: WidgetWrapper {
         super.draw(dirtyRect)
         
         var value: [[ColorValue]] = []
-        var pressureLevel: DispatchSource.MemoryPressureEvent = .normal
+        var pressureLevel: RAMPressure = .normal
         var colorZones: colorZones = (0.6, 0.8)
         self.queue.sync {
             value = self._value
             pressureLevel = self._pressureLevel
             colorZones = self._colorZones
+        }
+        
+        guard !value.isEmpty else {
+            self.setWidth(0)
+            return
         }
         
         var width: CGFloat = Constants.Widget.margin.x*2
@@ -126,22 +146,13 @@ public class BarChart: WidgetWrapper {
         }
         
         if self.labelState {
-            let style = NSMutableParagraphStyle()
-            style.alignment = .center
-            let stringAttributes = [
-                NSAttributedString.Key.font: NSFont.systemFont(ofSize: 7, weight: .regular),
-                NSAttributedString.Key.foregroundColor: NSColor.textColor,
-                NSAttributedString.Key.paragraphStyle: style
-            ]
-            
             let letterHeight = self.frame.height / 3
             let letterWidth: CGFloat = 6.0
             
             var yMargin: CGFloat = 0
-            for char in String(self.title.prefix(3)).uppercased().reversed() {
+            for char in self.NSLabelCharts {
                 let rect = CGRect(x: x, y: yMargin, width: letterWidth, height: letterHeight)
-                let str = NSAttributedString.init(string: "\(char)", attributes: stringAttributes)
-                str.draw(with: rect)
+                char.draw(with: rect)
                 yMargin += letterHeight
             }
             
@@ -212,14 +223,20 @@ public class BarChart: WidgetWrapper {
     }
     
     public func setValue(_ newValue: [[ColorValue]]) {
-        guard self._value != newValue else { return }
+        let tolerance: CGFloat = 0.01
+        let isDifferent = self._value.count != newValue.count || zip(self._value, newValue).contains { row1, row2 in
+            row1.count != row2.count || zip(row1, row2).contains { val1, val2 in
+                abs(val1.value - val2.value) > tolerance || val1.color != val2.color
+            }
+        }
+        guard isDifferent else { return }
         self._value = newValue
         DispatchQueue.main.async(execute: {
             self.display()
         })
     }
     
-    public func setPressure(_ newPressureLevel: DispatchSource.MemoryPressureEvent) {
+    public func setPressure(_ newPressureLevel: RAMPressure) {
         guard self._pressureLevel != newPressureLevel else { return }
         self._pressureLevel = newPressureLevel
         DispatchQueue.main.async(execute: {
@@ -240,32 +257,30 @@ public class BarChart: WidgetWrapper {
     public override func settings() -> NSView {
         let view = SettingsContainerView()
         
-        view.addArrangedSubview(toggleSettingRow(
-            title: localizedString("Label"),
-            action: #selector(self.toggleLabel),
-            state: self.labelState
-        ))
-        
-        self.boxSettingsView = toggleSettingRow(
-            title: localizedString("Box"),
+        let box = switchView(
             action: #selector(self.toggleBox),
             state: self.boxState
         )
-        view.addArrangedSubview(self.boxSettingsView!)
-        
-        self.frameSettingsView = toggleSettingRow(
-            title: localizedString("Frame"),
+        self.boxSettingsView = box
+        let frame = switchView(
             action: #selector(self.toggleFrame),
             state: self.frameState
         )
-        view.addArrangedSubview(self.frameSettingsView!)
+        self.frameSettingsView = frame
         
-        view.addArrangedSubview(selectSettingsRow(
-            title: localizedString("Color"),
-            action: #selector(self.toggleColor),
-            items: self.colors,
-            selected: self.colorState.key
-        ))
+        view.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Label"), component: switchView(
+                action: #selector(self.toggleLabel),
+                state: self.labelState
+            )),
+            PreferencesRow(localizedString("Color"), component: selectView(
+                action: #selector(self.toggleColor),
+                items: self.colors,
+                selected: self.colorState.key
+            )),
+            PreferencesRow(localizedString("Box"), component: box),
+            PreferencesRow(localizedString("Frame"), component: frame)
+        ]))
         
         return view
     }
@@ -281,7 +296,7 @@ public class BarChart: WidgetWrapper {
         Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_box", value: self.boxState)
         
         if self.frameState {
-            findAndToggleNSControlState(self.frameSettingsView, state: .off)
+            self.frameSettingsView?.state = .off
             self.frameState = false
             Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_frame", value: self.frameState)
         }
@@ -294,7 +309,7 @@ public class BarChart: WidgetWrapper {
         Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_frame", value: self.frameState)
         
         if self.boxState {
-            findAndToggleNSControlState(self.boxSettingsView, state: .off)
+            self.boxSettingsView?.state = .off
             self.boxState = false
             Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_box", value: self.boxState)
         }

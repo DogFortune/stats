@@ -21,7 +21,7 @@ import GPU
 import Bluetooth
 import Clock
 
-let updater = Updater(github: "exelban/stats", url: "https://api.serhiy.io/v1/stats/release/latest")
+let updater = Updater(github: "exelban/stats", url: "https://api.mac-stats.com/release/latest")
 var modules: [Module] = [
     CPU(),
     GPU(),
@@ -33,14 +33,15 @@ var modules: [Module] = [
     Bluetooth(),
     Clock()
 ]
-let telemetry: Telemetry = Telemetry(&modules)
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     internal let settingsWindow: SettingsWindow = SettingsWindow()
     internal let updateWindow: UpdateWindow = UpdateWindow()
     internal let setupWindow: SetupWindow = SetupWindow()
+    internal let supportWindow: SupportWindow = SupportWindow()
     internal let updateActivity = NSBackgroundActivityScheduler(identifier: "eu.exelban.Stats.updateCheck")
+    internal let supportActivity = NSBackgroundActivityScheduler(identifier: "eu.exelban.Stats.support")
     internal var clickInNotification: Bool = false
     internal var menuBarItem: NSStatusItem? = nil
     internal var combinedView: CombinedView = CombinedView()
@@ -48,6 +49,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     internal var pauseState: Bool {
         Store.shared.bool(key: "pause", defaultValue: false)
     }
+    
+    private var startTS: Date?
     
     static func main() {
         let app = NSApplication.shared
@@ -70,12 +73,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         self.icon()
         
         NotificationCenter.default.addObserver(self, selector: #selector(listenForAppPause), name: .pause, object: nil)
+        NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { [weak self] event in
+            self?.handleKeyEvent(event)
+        }
+        NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { [weak self] event in
+            self?.handleKeyEvent(event)
+            return event
+        }
         
         info("Stats started in \((startingPoint.timeIntervalSinceNow * -1).rounded(toPlaces: 4)) seconds")
+        self.startTS = Date()
     }
     
     func applicationWillTerminate(_ aNotification: Notification) {
         modules.forEach{ $0.terminate() }
+        Remote.shared.terminate()
     }
     
     deinit {
@@ -87,6 +99,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
             self.clickInNotification = false
             return true
         }
+        guard let startTS = self.startTS, Date().timeIntervalSince(startTS) > 2 else { return false }
         
         if flag {
             self.settingsWindow.makeKeyAndOrderFront(self)

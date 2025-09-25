@@ -28,15 +28,14 @@ public struct BLEDevice: Codable {
     var isPeripheralInitialized: Bool = false
     
     var id: String {
-        get {
-            return self.uuid?.uuidString ?? self.address
-        }
+        get { self.uuid?.uuidString ?? self.address }
     }
     
     var state: Bool {
-        get {
-            return Store.shared.bool(key: "ble_\(self.id)", defaultValue: false)
-        }
+        get { Store.shared.bool(key: "ble_\(self.id)", defaultValue: false) }
+    }
+    var notificationThreshold: String {
+        Store.shared.string(key: "ble_\(self.id)_notification", defaultValue: "")
     }
     
     private enum CodingKeys: String, CodingKey {
@@ -77,29 +76,31 @@ public struct BLEDevice: Codable {
 }
 
 public class Bluetooth: Module {
-    private var devicesReader: DevicesReader = DevicesReader()
+    private var devicesReader: DevicesReader?
     private let popupView: Popup = Popup()
     private let settingsView: Settings = Settings()
+    private let notificationsView: Notifications
     
     public init() {
+        self.notificationsView = Notifications(.bluetooth)
+        
         super.init(
+            moduleType: .bluetooth,
             popup: self.popupView,
-            settings: self.settingsView
+            settings: self.settingsView,
+            notifications: self.notificationsView
         )
         guard self.available else { return }
         
-        self.settingsView.callback = { [weak self] in
-            self?.devicesReader.read()
-        }
-        
-        self.devicesReader.callbackHandler = { [weak self] value in
+        self.devicesReader = DevicesReader { [weak self] value in
             self?.batteryCallback(value)
         }
-        self.devicesReader.readyCallback = { [weak self] in
-            self?.readyHandler()
+        
+        self.settingsView.callback = { [weak self] in
+            self?.devicesReader?.read()
         }
         
-        self.addReader(self.devicesReader)
+        self.setReaders([self.devicesReader])
     }
     
     private func batteryCallback(_ raw: [BLEDevice]?) {
@@ -109,6 +110,7 @@ public class Bluetooth: Module {
         DispatchQueue.main.async(execute: {
             self.popupView.batteryCallback(active)
             self.settingsView.setList(active)
+            self.notificationsView.callback(active)
         })
         
         var list: [Stack_t] = []
@@ -120,7 +122,7 @@ public class Bluetooth: Module {
             }
         }
         
-        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: Widget) in
+        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: SWidget) in
             switch w.item {
             case let widget as StackWidget: widget.setValues(list)
             default: break

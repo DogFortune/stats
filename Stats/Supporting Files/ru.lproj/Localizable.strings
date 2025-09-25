@@ -69,11 +69,37 @@
 "Square" = "Квадратное";
 "Cube" = "Кубическое";
 "Logarithmic" = "Логарифмическое";
+"Fixed scale" = "Фиксированное";
 "Cores" = "Ядра";
 "Settings" = "Настройки";
 "Name" = "Название";
 "Format" = "Формат";
 "Turn off" = "Выключить";
+"Normal" = "Нормальный";
+"Warning" = "Предупреждение";
+"Critical" = "Критический";
+"Usage" = "Использование";
+"2 minutes" = "2 минуты";
+"3 minutes" = "3 минуты";
+"10 minutes" = "10 минут";
+"Import" = "Импорт";
+"Export" = "Экспорт";
+"Separator" = "Разделитель";
+"Read" = "Чтение";
+"Write" = "Запись";
+"Frequency" = "Частота";
+"Save" = "Сохранить";
+"Run" = "Запустить";
+"Stop" = "Остановить";
+"Uninstall" = "Удалить";
+"1 sec" = "1 сек";
+"2 sec" = "2 сек";
+"3 sec" = "3 сек";
+"5 sec" = "5 сек";
+"10 sec" = "10 сек";
+"15 sec" = "15 сек";
+"30 sec" = "30 сек";
+"60 sec" = "60 сек";
 
 // Setup
 "Stats Setup" = "Настройки Stats";
@@ -105,6 +131,7 @@
 "Successfully updated" = "Успешно обновлено";
 "Stats was updated to v" = "Stats обновлено до v%0";
 "Reset settings text" = "Все настройки приложения будут сброшены, и приложение будет перезапущено. Вы уверены, что хотите это сделать?";
+"Support text" = "Спасибо за использование Stats.\n\n Поддержание и улучшение этого проекта с открытым исходным кодом требует времени и ресурсов. Ваша поддержка помогает нам продолжать предоставлять бесплатное и надежное приложение для всех.\n\nЕсли вы находите Stats полезным, пожалуйста, подумайте о том, чтобы сделать взнос. Каждый маленький кусочек помогает!";
 
 // Settings
 "Open Activity Monitor" = "Открыть Мониторинг системы";
@@ -113,6 +140,9 @@
 "Close application" = "Закрыть приложение";
 "Open application settings" = "Открыть настройки приложения";
 "Open dashboard" = "Открыть dashboard";
+"No notifications available in this module" = "В этом модуле нет доступных уведомлений";
+"Open Calendar" = "Открыть календарь";
+"Toggle the module" = "Переключить модуль";
 
 // Application settings
 "Update application" = "Обновить приложение";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "Показать значок в dock";
 "Start at login" = "Запуск при входе";
 "Build number" = "Номер сборки";
+"Import settings" = "Импортировать настройки";
+"Export settings" = "Экспортировать настройки";
 "Reset settings" = "Сбросить настройки";
 "Pause the Stats" = "Приостановить Stats";
 "Resume the Stats" = "Возобновить Stats";
 "Combined modules" = "Комбинированные модули";
+"Combined details" = "Комбинированные детали";
 "Spacing" = "Интервал";
 "Share anonymous telemetry" = "Делится анонимной телеметрией";
+"Choose file" = "Выбрать файл";
+"Stress tests" = "Стресс-тесты";
 
 // Dashboard
 "Serial number" = "Серийный номер";
+"Model identifier" = "Идентификатор модели";
+"Production year" = "Год выпуска";
 "Uptime" = "Время работы";
 "Number of cores" = "%0 ядер";
 "Number of threads" = "%0 потоков";
-"Number of e-cores" = "%0 производительных ядер";
-"Number of p-cores" = "%0 энергоэффективных ядер";
+"Number of e-cores" = "%0 энергоэффективных ядер";
+"Number of p-cores" = "%0 производительных ядер";
+"Disks" = "Диски";
 
 // Update
 "The latest version of Stats installed" = "Установлена последняя версия";
@@ -173,6 +211,8 @@
 "Static width" = "Статическая ширина";
 "Tachometer widget" = "Тахометр";
 "State widget" = "Состояние";
+"Text widget" = "Текст";
+"Battery details widget" = "Виджет сведений о батарее";
 "Show symbols" = "Показать символы";
 "Label widget" = "Этикетка";
 "Number of reads in the chart" = "Количество чтений на графике";
@@ -180,6 +220,10 @@
 "Color of upload" = "Цвет выгрузки";
 "Monospaced font" = "Моноширинный шрифт";
 "Reverse order" = "Обратный порядок";
+"Chart history" = "Продолжительность графика";
+"Default color" = "По умолчанию";
+"Transparent when no activity" = "Прозрачный когда нет активности";
+"Constant color" = "Постоянный";
 
 // Module Kit
 "Open module settings" = "Открыть настройки модуля";
@@ -197,12 +241,19 @@
 "Merge widgets" = "Объединить виджеты";
 "No available widgets to configure" = "Нет доступных виджетов для настройки";
 "No options to configure for the popup in this module" = "Нет параметров для настройки всплывающего окна в этом модуле";
+"Process" = "Процесс";
+"Kill process" = "Завершить процесс";
+"Keyboard shortcut" = "Сочетание клавиш";
+"Listening..." = "Слушание...";
 
 // Modules
 "Number of top processes" = "Количество процессов";
 "Update interval for top processes" = "Интервал обновления процессов";
 "Notification level" = "Уровень уведомления";
 "Chart color" = "Цвет графика";
+"Main chart scaling" = "Масштабирование основного графика";
+"Scale value" = "Значение масштаба";
+"Text widget value" = "Значение текстового виджета";
 
 // CPU
 "CPU usage" = "Использование процессора";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "Кластерная группировка";
 "Efficiency cores color" = "Цвет энергоэффективных ядер";
 "Performance cores color" = "Цвет производительных ядер";
+"Total load" = "Общая нагрузка";
+"System load" = "Системная нагрузка";
+"User load" = "Пользовательская нагрузка";
+"Efficiency cores load" = "Нагрузка энергоэффективных ядер";
+"Performance cores load" = "Нагрузка производительных ядер";
+"All cores" = "Все ядра";
 
 // GPU
 "GPU to show" = "Активный графический процессор";
@@ -269,6 +326,9 @@
 "Wired color" = "Цвет зарезервированной памяти";
 "Compressed color" = "Цвет сжатой памяти";
 "Free color" = "Цвет свободной памяти";
+"Free memory (less than)" = "Свободная память (менее чем)";
+"Swap size" = "Размер swap";
+"Free RAM is" = "Свободная оперативная память %0";
 
 // Disk
 "Show removable disks" = "Показать съемные диски";
@@ -282,6 +342,12 @@
 "Read color" = "Цвет чтения";
 "Write color" = "Цвет записи";
 "Disk usage" = "Использование диска";
+"Total read" = "Всего прочитано";
+"Total written" = "Всего записано";
+"Write speed" = "Запись";
+"Read speed" = "Чтение";
+"Drives" = "Диски";
+"SMART data" = "SMART данные";
 
 // Sensors
 "Temperature unit" = "Единица измерения температуры";
@@ -299,6 +365,11 @@
 "Fan value" = "Значение вентилятора";
 "Turn off fan" = "Выключить вентилятор";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "Вы собираетесь выключить вентилятор. Это не рекомендуемое действие, которое может сломать ваш Mac. Вы уверены, что хотите это сделать?";
+"Sensor threshold" = "Порог датчика";
+"Left fan" = "Левый";
+"Right fan" = "Правый";
+"Fastest fan" = "Самый быстрый";
+"Sensor to show" = "Активный датчик";
 
 // Network
 "Uploading" = "Выгрузка";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "Цвет неактивного состояния";
 "Connectivity host (ICMP)" = "Хост подключения (ICMP)";
 "Leave empty to disable the check" = "Оставьте пустым, чтобы отключить проверку";
-"Transparent pictogram when no activity" = "Прозрачная пиктограмма при отсутствии активности";
 "Connectivity history" = "История подключения";
 "Auto-refresh public IP address" = "Автоматическое обновление IP-адреса";
 "Every hour" = "Каждый час";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Каждые 24 часа";
 "Network activity" = "Сетевая активность";
 "Last reset" = "Последний сброс %0 назад";
+"Latency" = "Задержка";
+"Upload speed" = "Выгрузка";
+"Download speed" = "Загрузка";
+"Address" = "Адрес";
+"WiFi network" = "Сеть Wi-Fi";
 
 // Battery
 "Level" = "Уровень заряда";
@@ -347,7 +422,7 @@
 "AC Power" = "Сеть";
 "Battery Power" = "Аккумулятор";
 "Time" = "Время";
-"Health" = "Состояние аккумулятора";
+"Health" = "Состояние";
 "Amperage" = "Сила тока";
 "Voltage" = "Напряжение";
 "Cycles" = "Количество циклов";
@@ -377,6 +452,9 @@
 "Low power mode" = "Режим пониженного энергопотребления";
 "Percentage inside the icon" = "Процент внутри виджета";
 "Colorize battery" = "Раскрасить батарею";
+"Charging current" = "Ток зарядки";
+"Charging Voltage" = "Напряжение зарядки";
+"Charger state inside the battery" = "Состояние зарядки внутри аккумулятора";
 
 // Bluetooth
 "Battery to show" = "Активная батарея";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Часовой пояс";
 "Local" = "Локальный";
+"Calendar" = "Календарь";
+"Local time" = "Местное время";
+"Add new clock" = "Добавить новые часы";
+"Delete selected clock" = "Удалить выбранные часы";
+"Help with datetime format" = "Помощь с форматом даты и времени";
 
 // Colors
 "Based on utilization" = "На основе использования";

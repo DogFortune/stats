@@ -12,6 +12,7 @@
 import Cocoa
 import Kit
 import IOKit.storage
+import CoreServices
 
 let kIONVMeSMARTUserClientTypeID = CFUUIDGetConstantUUIDWithBytes(nil,
                                                                   0xAA, 0x0F, 0xA6, 0xF9,
@@ -34,6 +35,11 @@ let kIOCFPlugInInterfaceID = CFUUIDGetConstantUUIDWithBytes(nil,
 
 internal class CapacityReader: Reader<Disks> {
     internal var list: Disks = Disks()
+    
+    private var SMART: Bool {
+        Store.shared.bool(key: "\(ModuleType.disk.stringValue)_SMART", defaultValue: true)
+    }
+    private var purgableSpace: [URL: (Date, Int64)] = [:]
     
     public override func read() {
         let keys: [URLResourceKey] = [.volumeNameKey]
@@ -61,6 +67,7 @@ internal class CapacityReader: Reader<Disks> {
                             
                             if let path = d.path {
                                 self.list.updateFreeSize(idx, newValue: self.freeDiskSpaceInBytes(path))
+                                self.list.updateSMARTData(idx, smart: self.getSMARTDetails(for: BSDName))
                             }
                             
                             continue
@@ -71,6 +78,8 @@ internal class CapacityReader: Reader<Disks> {
                                 d.free = self.freeDiskSpaceInBytes(path)
                                 d.size = self.totalDiskSpaceInBytes(path)
                             }
+                            d.smart = self.getSMARTDetails(for: BSDName)
+                            guard d.size != 0 else { continue }
                             self.list.append(d)
                             self.list.sort()
                         }
@@ -89,6 +98,26 @@ internal class CapacityReader: Reader<Disks> {
     }
     
     private func freeDiskSpaceInBytes(_ path: URL) -> Int64 {
+        var stat = statfs()
+        if statfs(path.path, &stat) == 0 {
+            var purgeable: Int64 = 0
+            if self.purgableSpace[path] == nil {
+                let value = CSDiskSpaceGetRecoveryEstimate(path as NSURL)
+                purgeable = Int64(value)
+                self.purgableSpace[path] = (Date(), purgeable)
+            } else if let pair = self.purgableSpace[path] {
+                let delta = Date().timeIntervalSince(pair.0)
+                if delta > 30 {
+                    let value = CSDiskSpaceGetRecoveryEstimate(path as NSURL)
+                    purgeable = Int64(value)
+                    self.purgableSpace[path] = (Date(), purgeable)
+                } else {
+                    purgeable = pair.1
+                }
+            }
+            return (Int64(stat.f_bfree) * Int64(stat.f_bsize)) + Int64(purgeable)
+        }
+        
         do {
             if let url = URL(string: path.absoluteString) {
                 let values = try url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
@@ -126,6 +155,8 @@ internal class CapacityReader: Reader<Disks> {
     }
     
     private func getSMARTDetails(for BSDName: String) -> smart_t? {
+        guard self.SMART else { return nil }
+        
         var disk = IOServiceGetMatchingService(kIOMasterPortDefault, IOBSDNameMatching(kIOMasterPortDefault, 0, BSDName.cString(using: .utf8)))
         guard disk != kIOReturnSuccess else { return nil }
         defer { IOObjectRelease(disk) }
@@ -177,19 +208,32 @@ internal class CapacityReader: Reader<Disks> {
         let data = NSData(bytes: temperatures, length: 2)
         data.getBytes(&temperature, length: 2)
         
+        let dataUnitsRead = self.extractUInt64(smartData.data_units_read)
+        let dataUnitsWritten = self.extractUInt64(smartData.data_units_written)
+        let bytesPerDataUnit: Int64 = 512 * 1000
+        
+        let powerCycles = withUnsafeBytes(of: smartData.power_cycles) { $0.load(as: UInt32.self) }
+        let powerOnHours = withUnsafeBytes(of: smartData.power_on_hours) { $0.load(as: UInt32.self) }
+        
         return smart_t(
             temperature: Int(UInt16(bigEndian: temperature) - 273),
-            life: 100 - Int(smartData.percent_used)
+            life: 100 - Int(smartData.percent_used),
+            totalRead: dataUnitsRead * bytesPerDataUnit,
+            totalWritten: dataUnitsWritten * bytesPerDataUnit,
+            powerCycles: Int(powerCycles),
+            powerOnHours: Int(powerOnHours)
         )
+    }
+    
+    private func extractUInt64(_ tuple: (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8)) -> Int64 {
+        let byteArray: [UInt8] = [tuple.0, tuple.1, tuple.2, tuple.3, tuple.4, tuple.5, tuple.6, tuple.7]
+        let uint64Value = byteArray.withUnsafeBytes { $0.load(as: UInt64.self) }
+        return uint64Value > UInt64(Int64.max) ? Int64.max : Int64(bitPattern: uint64Value)
     }
 }
 
 internal class ActivityReader: Reader<Disks> {
     internal var list: Disks = Disks()
-    
-    init() {
-        super.init(.disk)
-    }
     
     override func setup() {
         self.setInterval(1)
@@ -242,9 +286,11 @@ internal class ActivityReader: Reader<Disks> {
     }
     
     private func driveStats(_ idx: Int, _ d: drive) {
-        guard let props = getIOProperties(d.parent) else {
-            return
-        }
+        let service = IOServiceGetMatchingService(kIOMasterPortDefault, IOBSDNameMatching(kIOMasterPortDefault, 0, d.BSDName))
+        if service == 0 { return }
+        IOObjectRelease(service)
+        
+        guard let props = getIOProperties(d.parent) else { return }
         
         if let statistics = props.object(forKey: "Statistics") as? NSDictionary {
             let readBytes = statistics.object(forKey: "Bytes (Read)") as? Int64 ?? 0
@@ -282,6 +328,9 @@ private func driveDetails(_ disk: DADisk, removableState: Bool) -> drive? {
                 }
             }
             
+            if let mediaUUID = dict[kDADiskDescriptionMediaUUIDKey as String] {
+                d.uuid = CFUUIDCreateString(kCFAllocatorDefault, (mediaUUID as! CFUUID)) as String
+            }
             if let mediaName = dict[kDADiskDescriptionVolumeNameKey as String] {
                 d.mediaName = mediaName as! String
                 if d.mediaName == "Recovery" {
@@ -325,6 +374,9 @@ private func driveDetails(_ disk: DADisk, removableState: Bool) -> drive? {
     
     if d.path == nil {
         return nil
+    }
+    if d.uuid == "" || d.uuid == "00000000-0000-0000-0000-000000000000" {
+        d.uuid = d.BSDName
     }
     
     let partitionLevel = d.BSDName.filter { "0"..."9" ~= $0 }.count
@@ -370,7 +422,7 @@ public class ProcessReader: Reader<[Disk_process]> {
     }
     
     private var numberOfProcesses: Int {
-        Store.shared.int(key: "\(Disk.name)_processes", defaultValue: 5)
+        Store.shared.int(key: "\(ModuleType.disk.stringValue)_processes", defaultValue: 5)
     }
     
     public override func setup() {
@@ -382,14 +434,11 @@ public class ProcessReader: Reader<[Disk_process]> {
         guard self.numberOfProcesses != 0, let output = runProcess(path: "/bin/ps", args: ["-Aceo pid,args", "-r"]) else { return }
         
         var processes: [Disk_process] = []
-        output.enumerateLines { (line, _) -> Void in
-            var str = line.trimmingCharacters(in: .whitespaces)
-            let pidString = str.findAndCrop(pattern: "^\\d+")
-            if let range = str.range(of: pidString) {
-                str = str.replacingCharacters(in: range, with: "")
-            }
-            let name = str.findAndCrop(pattern: "^[^ ]+")
-            guard let pid = Int32(pidString) else { return }
+        output.enumerateLines { (line, _) in
+            let str = line.trimmingCharacters(in: .whitespaces)
+            let pidFind = str.findAndCrop(pattern: "^\\d+")
+            guard let pid = Int32(pidFind.cropped) else { return }
+            let name = pidFind.remain.findAndCrop(pattern: "^[^ ]+").cropped
             
             var usage = rusage_info_current()
             let result = withUnsafeMutablePointer(to: &usage) {
@@ -410,7 +459,7 @@ public class ProcessReader: Reader<[Disk_process]> {
                 let read = bytesRead - v.read
                 let write = bytesWritten - v.write
                 if read != 0 || write != 0 {
-                    processes.append(Disk_process(pid: pid, name: name, read: read, write: write))
+                    processes.append(Disk_process(pid: Int(pid), name: name, read: read, write: write))
                 }
             }
             
@@ -452,5 +501,5 @@ private func runProcess(path: String, args: [String] = []) -> String? {
     }
     
     let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-    return String(decoding: outputData, as: UTF8.self)
+    return String(data: outputData, encoding: .utf8)
 }

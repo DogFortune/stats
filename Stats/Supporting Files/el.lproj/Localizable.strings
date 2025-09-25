@@ -69,11 +69,37 @@
 "Square" = "Τετραγωνικό";
 "Cube" = "Κυβικό";
 "Logarithmic" = "Λογαριθμικό";
+"Fixed scale" = "Fixed";
 "Cores" = "Πυρήνες";
 "Settings" = "Ρυθμίσεις";
 "Name" = "Name";
 "Format" = "Format";
 "Turn off" = "Turn off";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "Εγκατάσταση Stats";
@@ -105,6 +131,7 @@
 "Successfully updated" = "Επιτυχής ενημέρωση";
 "Stats was updated to v" = "Το Stats ενημερώθηκε στην ε%0";
 "Reset settings text" = "Όλες οι ρυθμίσεις της εφαρμογής θα αρχικοποιηθούν και η εφαρμογή θα επανεκκινηθεί. Είστε σίγουροι;";
+"Support text" = "Σας ευχαριστούμε για τη χρήση των Stats!\n\n Η συντήρηση και η βελτίωση αυτού του έργου ανοιχτού κώδικα απαιτεί χρόνο και πόρους. Η υποστήριξή σας μας βοηθά να συνεχίσουμε να παρέχουμε μια δωρεάν και αξιόπιστη εφαρμογή για όλους.\n\nΕάν βρίσκετε το Stats χρήσιμο, παρακαλούμε σκεφτείτε να συνεισφέρετε. Κάθε μικρό ποσό βοηθάει!";
 
 // Settings
 "Open Activity Monitor" = "Άνοιγμα Παρακολούθησης Δραστηριότητας";
@@ -113,6 +140,9 @@
 "Close application" = "Κλείσιμο εφαρμογής";
 "Open application settings" = "Άνοιγμα ρυθμίσεων εφαρμογής";
 "Open dashboard" = "Άνοιγμα ταμπλό";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "Ενημέρωση Εφαρμογής";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "Εμφάνιση εικονιδίου στο dock";
 "Start at login" = "Εκκίνηση κατά τη σύνδεση";
 "Build number" = "Αριθμός έκδοσης";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "Επαναφορά ρυθμίσεων";
 "Pause the Stats" = "Παύση του Stats";
 "Resume the Stats" = "Ξαναρχίζω το Stats";
 "Combined modules" = "Συνένωση ενοτήτων";
+"Combined details" = "Combined details";
 "Spacing" = "Κενό";
 "Share anonymous telemetry" = "Share anonymous telemetry";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "Σειριακός αριθμός";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "Χρόνος Δραστηριότητας";
 "Number of cores" = "%0 πυρήνες";
 "Number of threads" = "%0 threads";
 "Number of e-cores" = "%0 πυρήνες απόδοσης";
 "Number of p-cores" = "%0 πυρήνες επίδοσης";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "Η τελευταία έκδοση του Stats είναι εγκατεστημένη";
@@ -173,6 +211,8 @@
 "Static width" = "Σταθερό πλάτος";
 "Tachometer widget" = "Ταχύμετρο";
 "State widget" = "State widget";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "Εμφάνιση συμβόλων";
 "Label widget" = "Ετικέτα";
 "Number of reads in the chart" = "Αριθμός αναγνώσεων του διαγράμματος";
@@ -180,6 +220,10 @@
 "Color of upload" = "Χρώμα της μεταφόρτωσης";
 "Monospaced font" = "Μονόχωρη γραμματοσειρά";
 "Reverse order" = "Reverse order";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "Άνοιγμα ρυθμίσεων ενότητας";
@@ -197,12 +241,19 @@
 "Merge widgets" = "Συγχώνευση γραφικών στοιχείων";
 "No available widgets to configure" = "Δεν υπάρχουν διαθέσιμα γραφικά στοιχεία για διαμόρφωση";
 "No options to configure for the popup in this module" = "Δεν υπάρχουν επιλογές για διαμόρφωση για το αναδυόμενο παράθυρο σε αυτήν την ενότητα";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "Αριθμός κορυφαίων διεργασιών";
 "Update interval for top processes" = "Ενημέρωση μεσοδιαστήματος για τις κορυφαίες διεργασίες";
 "Notification level" = "Επίπεδο Ειδοποίησης";
 "Chart color" = "Χρώμα γραφήματος";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "Χρήση CPU";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "Cluster grouping";
 "Efficiency cores color" = "Efficiency cores color";
 "Performance cores color" = "Performance cores color";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "GPU προς εμφάνιση";
@@ -269,6 +326,9 @@
 "Wired color" = "Χρώμα Δεσμευμένης";
 "Compressed color" = "Χρώμα Συμπίεσης";
 "Free color" = "Χρώμα Ελεύθερου";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "Εμφάνιση αφαιρούμενων δίσκων";
@@ -282,6 +342,12 @@
 "Read color" = "Χρώμα ανάγνωσης";
 "Write color" = "Χρώμα εγγραφής";
 "Disk usage" = "Disk usage";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "Μονάδα θερμοκρασίας";
@@ -299,6 +365,11 @@
 "Fan value" = "Fan value";
 "Turn off fan" = "Turn off fan";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "Μεταφόρτωση";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "Nonactive state color";
 "Connectivity host (ICMP)" = "Connectivity host (ICMP)";
 "Leave empty to disable the check" = "Leave empty to disable the check";
-"Transparent pictogram when no activity" = "Transparent pictogram when no activity";
 "Connectivity history" = "Connectivity history";
 "Auto-refresh public IP address" = "Auto-refresh public IP address";
 "Every hour" = "Every hour";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Every 24 hours";
 "Network activity" = "Network activity";
 "Last reset" = "Last reset %0 ago";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "Επίπεδο";
@@ -377,6 +452,9 @@
 "Low power mode" = "Κατάστασης χαμηλής ενέργειας";
 "Percentage inside the icon" = "Ποσοστό μέσα στο εικονίδιο";
 "Colorize battery" = "Colorize battery";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "Μπαταρία προς εμφάνιση";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Time zone";
 "Local" = "Local";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "Βάσει της χρήσης";

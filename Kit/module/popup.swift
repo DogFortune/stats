@@ -12,26 +12,49 @@
 import Cocoa
 
 public protocol Popup_p: NSView {
+    var keyboardShortcut: [UInt16] { get }
     var sizeCallback: ((NSSize) -> Void)? { get set }
+    
     func settings() -> NSView?
     
     func appear()
     func disappear()
+    func setKeyboardShortcut(_ binding: [UInt16])
 }
 
 open class PopupWrapper: NSStackView, Popup_p {
+    public var title: String
+    public var keyboardShortcut: [UInt16] = []
     open var sizeCallback: ((NSSize) -> Void)? = nil
+    
+    public init(_ typ: ModuleType, frame: NSRect) {
+        self.title = typ.stringValue
+        self.keyboardShortcut = Store.shared.array(key: "\(typ.stringValue)_popup_keyboardShortcut", defaultValue: []) as? [UInt16] ?? []
+        
+        super.init(frame: frame)
+    }
+    
+    required public init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     open func settings() -> NSView? { return nil }
     open func appear() {}
     open func disappear() {}
+    
+    open func setKeyboardShortcut(_ binding: [UInt16]) {
+        self.keyboardShortcut = binding
+        Store.shared.set(key: "\(self.title)_popup_keyboardShortcut", value: binding)
+    }
 }
 
 public class PopupWindow: NSWindow, NSWindowDelegate {
-    private let viewController: PopupViewController = PopupViewController()
+    private let viewController: PopupViewController
     internal var locked: Bool = false
     internal var openedBy: widget_t? = nil
     
-    public init(title: String, view: Popup_p?, visibilityCallback: @escaping (_ state: Bool) -> Void) {
+    public init(title: String, module: ModuleType, view: Popup_p?, visibilityCallback: @escaping (_ state: Bool) -> Void) {
+        self.viewController = PopupViewController(module: module)
         self.viewController.setup(title: title, view: view)
         
         super.init(
@@ -51,6 +74,8 @@ public class PopupWindow: NSWindow, NSWindowDelegate {
             visibilityCallback(state)
         }
         
+        self.title = title
+        self.titleVisibility = .hidden
         self.contentViewController = self.viewController
         self.titlebarAppearsTransparent = true
         self.animationBehavior = .default
@@ -77,16 +102,16 @@ public class PopupWindow: NSWindow, NSWindowDelegate {
 }
 
 internal class PopupViewController: NSViewController {
-    public var visibilityCallback: (_ state: Bool) -> Void = {_ in }
+    fileprivate var visibilityCallback: (_ state: Bool) -> Void = {_ in }
     private var popup: PopupView
     
-    public init() {
+    public init(module: ModuleType) {
         self.popup = PopupView(frame: NSRect(
             x: 0,
             y: 0,
             width: Constants.Popup.width + (Constants.Popup.margins * 2),
             height: Constants.Popup.height+Constants.Popup.headerHeight
-        ))
+        ), module: module)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -96,10 +121,6 @@ internal class PopupViewController: NSViewController {
     
     override func loadView() {
         self.view = self.popup
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
     }
     
     override func viewWillAppear() {
@@ -116,19 +137,18 @@ internal class PopupViewController: NSViewController {
         self.visibilityCallback(false)
     }
     
-    public func setup(title: String, view: Popup_p?) {
+    fileprivate func setup(title: String, view: Popup_p?) {
         self.title = title
         self.popup.setTitle(title)
         self.popup.setView(view)
     }
     
-    public func setCloseButton(_ state: Bool) {
+    fileprivate func setCloseButton(_ state: Bool) {
         self.popup.setCloseButton(state)
     }
 }
 
 internal class PopupView: NSView {
-    private var title: String? = nil
     private var view: Popup_p? = nil
     
     private var foreground: NSVisualEffectView
@@ -143,13 +163,13 @@ internal class PopupView: NSView {
     private var windowHeight: CGFloat?
     private var containerHeight: CGFloat?
     
-    override init(frame: NSRect) {
+    init(frame: NSRect, module: ModuleType) {
         self.header = HeaderView(frame: NSRect(
             x: 0,
             y: frame.height - Constants.Popup.headerHeight,
             width: frame.width,
             height: Constants.Popup.headerHeight
-        ))
+        ), module: module)
         self.body = NSScrollView(frame: NSRect(
             x: Constants.Popup.margins,
             y: Constants.Popup.margins,
@@ -194,7 +214,7 @@ internal class PopupView: NSView {
         self.background.layer?.backgroundColor = self.isDarkMode ? .clear : NSColor.white.cgColor
     }
     
-    public func setView(_ view: Popup_p?) {
+    fileprivate func setView(_ view: Popup_p?) {
         self.view = view
         
         var isScrollVisible: Bool = false
@@ -230,12 +250,11 @@ internal class PopupView: NSView {
         }
     }
     
-    public func setTitle(_ newTitle: String) {
-        self.title = newTitle
+    fileprivate func setTitle(_ newTitle: String) {
         self.header.setTitle(newTitle)
     }
     
-    public func setCloseButton(_ state: Bool) {
+    fileprivate func setCloseButton(_ state: Bool) {
         self.header.setCloseButton(state)
     }
     
@@ -303,12 +322,16 @@ internal class PopupView: NSView {
 internal class HeaderView: NSStackView {
     private var titleView: NSTextField? = nil
     private var activityButton: NSButton?
-    private var settingsButton: NSButton?
     
     private var title: String = ""
     private var isCloseAction: Bool = false
+    private let activityMonitor: URL?
+    private let calendar: URL?
     
-    override init(frame: NSRect) {
+    init(frame: NSRect, module: ModuleType) {
+        self.activityMonitor = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.ActivityMonitor")
+        self.calendar = URL(fileURLWithPath: "/System/Applications/Calendar.app")
+        
         super.init(frame: CGRect(x: frame.origin.x, y: frame.origin.y, width: frame.width, height: frame.height))
         
         self.orientation = .horizontal
@@ -321,12 +344,18 @@ internal class HeaderView: NSStackView {
         activity.bezelStyle = .regularSquare
         activity.translatesAutoresizingMaskIntoConstraints = false
         activity.imageScaling = .scaleNone
-        activity.image = Bundle(for: type(of: self)).image(forResource: "chart")!
         activity.contentTintColor = .lightGray
         activity.isBordered = false
-        activity.action = #selector(openActivityMonitor)
         activity.target = self
-        activity.toolTip = localizedString("Open Activity Monitor")
+        if module == .clock {
+            activity.action = #selector(self.openCalendar)
+            activity.image = Bundle(for: type(of: self)).image(forResource: "calendar")!
+            activity.toolTip = localizedString("Open Calendar")
+        } else {
+            activity.action = #selector(self.openActivityMonitor)
+            activity.image = Bundle(for: type(of: self)).image(forResource: "chart")!
+            activity.toolTip = localizedString("Open Activity Monitor")
+        }
         activity.focusRingType = .none
         self.activityButton = activity
         
@@ -352,11 +381,10 @@ internal class HeaderView: NSStackView {
         settings.image = Bundle(for: type(of: self)).image(forResource: "settings")!
         settings.contentTintColor = .lightGray
         settings.isBordered = false
-        settings.action = #selector(openSettings)
+        settings.action = #selector(self.openSettings)
         settings.target = self
         settings.toolTip = localizedString("Open module settings")
         settings.focusRingType = .none
-        self.settingsButton = settings
         
         self.addArrangedSubview(activity)
         self.addArrangedSubview(title)
@@ -373,35 +401,22 @@ internal class HeaderView: NSStackView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func setTitle(_ newTitle: String) {
+    fileprivate func setTitle(_ newTitle: String) {
         self.title = newTitle
         self.titleView?.stringValue = localizedString(newTitle)
     }
     
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        
-        NSColor.gridColor.set()
-        let line = NSBezierPath()
-        line.move(to: NSPoint(x: 0, y: 0))
-        line.line(to: NSPoint(x: self.frame.width, y: 0))
-        line.lineWidth = 1
-        line.stroke()
+    @objc func openActivityMonitor() {
+        guard let app = self.activityMonitor else { return }
+        NSWorkspace.shared.open([], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
     }
     
-    @objc func openActivityMonitor(_ sender: Any) {
-        self.window?.setIsVisible(false)
-        
-        NSWorkspace.shared.launchApplication(
-            withBundleIdentifier: "com.apple.ActivityMonitor",
-            options: [.default],
-            additionalEventParamDescriptor: nil,
-            launchIdentifier: nil
-        )
+    @objc func openCalendar() {
+        guard let app = self.calendar else { return }
+        NSWorkspace.shared.open([], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
     }
     
-    @objc func openSettings(_ sender: Any) {
-        self.window?.setIsVisible(false)
+    @objc func openSettings() {
         NotificationCenter.default.post(name: .toggleSettings, object: nil, userInfo: ["module": self.title])
     }
     
@@ -411,10 +426,10 @@ internal class HeaderView: NSStackView {
         return
     }
     
-    public func setCloseButton(_ state: Bool) {
+    fileprivate func setCloseButton(_ state: Bool) {
         if state && !self.isCloseAction {
             self.activityButton?.image = Bundle(for: type(of: self)).image(forResource: "close")!
-            self.activityButton?.toolTip = localizedString("Close popup")
+            self.activityButton?.toolTip = localizedString("Close")
             self.activityButton?.action = #selector(self.closePopup)
             self.isCloseAction = true
         } else if !state && self.isCloseAction {

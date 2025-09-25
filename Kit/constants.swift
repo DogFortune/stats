@@ -67,7 +67,9 @@ public enum ModuleType: Int {
     case bluetooth
     case clock
     
-    var rawValue: String {
+    case combined
+    
+    public var stringValue: String {
         switch self {
         case .CPU: return "CPU"
         case .RAM: return "RAM"
@@ -78,6 +80,7 @@ public enum ModuleType: Int {
         case .battery: return "Battery"
         case .bluetooth: return "Bluetooth"
         case .clock: return "Clock"
+        case .combined: return ""
         }
     }
 }

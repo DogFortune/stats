@@ -22,12 +22,12 @@
 "Open Sensors settings" = "Åpne sensorinnstillinger";
 "Network" = "Network";
 "Open Network settings" = "Åpne nettverksinnstillinger";
-"Battery" = "Battery";
+"Battery" = "Batteri";
 "Open Battery settings" = "Åpne batteriinnstillinger";
 "Bluetooth" = "Bluetooth";
 "Open Bluetooth settings" = "Åpne Bluetooth-innstillinger";
-"Clock" = "Clock";
-"Open Clock settings" = "Open clock settings";
+"Clock" = "Klokke";
+"Open Clock settings" = "Åpne klokkeinnstillinger";
 
 // Words
 "Unknown" = "Ukjent";
@@ -69,11 +69,37 @@
 "Square" = "Kvadratisk";
 "Cube" = "Kubisk";
 "Logarithmic" = "Logaritmisk";
+"Fixed scale" = "Fixed";
 "Cores" = "Kjerner";
 "Settings" = "Innstillinger";
-"Name" = "Name";
+"Name" = "Navn";
 "Format" = "Format";
-"Turn off" = "Turn off";
+"Turn off" = "Slå av";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "Stats-oppsett";
@@ -93,9 +119,9 @@
 "Check for a new version every week (once a week)" = "Se etter ny versjon én gang hver uke";
 "Check for a new version every month (once a month)" = "Se etter ny versjon én gang hver måned";
 "Never check for updates (not recommended)" = "Aldri se etter ny versjon (ikke anbefalt)";
-"Anonymous telemetry for better development decisions" = "Anonymous telemetry for better development decisions";
-"Share anonymous telemetry data" = "Share anonymous telemetry data";
-"Do not share anonymous telemetry data" = "Do not share anonymous telemetry data";
+"Anonymous telemetry for better development decisions" = "Anonym telemetri for bedre utviklingsbeslutninger";
+"Share anonymous telemetry data" = "Del anonyme telemetridata";
+"Do not share anonymous telemetry data" = "Ikke del anonyme telemetridata";
 "The configuration is completed" = "Konfigurasjonen er fullført";
 "finish_setup_message" = "Alt er satt opp! \n Stats er et fritt tilgjengelig verktøy, det er gratis og vil alltid være det. \n Hvis du liker Stats, kan du støtte prosjektet, det settes veldig pris på!";
 
@@ -105,6 +131,7 @@
 "Successfully updated" = "Oppdateringen var vellykket";
 "Stats was updated to v" = "Stats ble oppdatert til v%0";
 "Reset settings text" = "Alle innstillinger vil bli nullstilt og applikasjonen vil starte på nytt. Er du sikker på at du vil gjøre dette?";
+"Support text" = "Takk for at du bruker Stats!\n\nDet krever tid og ressurser å vedlikeholde og forbedre dette åpen kildekode-prosjektet. Din støtte hjelper oss med å fortsette å tilby et gratis og pålitelig program for alle. Hvis du synes Stats er nyttig, kan du vurdere å gi et bidrag. Hver eneste lille bit hjelper!";
 
 // Settings
 "Open Activity Monitor" = "Åpne Aktivitetsmonitor";
@@ -112,7 +139,10 @@
 "Support the application" = "Støtt programmet";
 "Close application" = "Lukk programmet";
 "Open application settings" = "Åpne programinnstillinger";
-"Open dashboard" = "Open dashboard";
+"Open dashboard" = "Åpne dashboard";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "Oppdater programmet";
@@ -125,21 +155,29 @@
 "Check for update" = "Se etter oppdatering";
 "Show icon in dock" = "Vis ikon i dock";
 "Start at login" = "Start ved innlogging";
-"Build number" = "Build number";
+"Build number" = "Byggnummer";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "Nullstill innstillinger";
 "Pause the Stats" = "Sett Stats på pause";
 "Resume the Stats" = "Gjenoppta Stats";
-"Combined modules" = "Combined modules";
-"Spacing" = "Spacing";
-"Share anonymous telemetry" = "Share anonymous telemetry";
+"Combined modules" = "Kombinerte moduler";
+"Combined details" = "Combined details";
+"Spacing" = "Mellomrom";
+"Share anonymous telemetry" = "Del anonyme telemetridata";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "Serienummer";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "Oppetid";
 "Number of cores" = "%0 kjerner";
 "Number of threads" = "%0 tråder";
 "Number of e-cores" = "%0 effektivitetskjerner";
 "Number of p-cores" = "%0 ytelseskjerner";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "Du har den nyeste versjonen av Stats";
@@ -168,18 +206,24 @@
 "Network chart widget" = "Linjediagram";
 "Speed widget" = "Tall";
 "Battery widget" = "Batteri";
-"Stack widget" = "Stack";
+"Stack widget" = "Bunke";
 "Memory widget" = "Tall";
 "Static width" = "Statisk bredde";
 "Tachometer widget" = "Tachometer";
 "State widget" = "Tilstandsdiagram";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "Vis symboler";
 "Label widget" = "Merkelapp";
 "Number of reads in the chart" = "Antall avlesninger i diagrammet";
 "Color of download" = "Farge for nedlasting";
 "Color of upload" = "Farge for opplasting";
-"Monospaced font" = "Monospaced font";
-"Reverse order" = "Reverse order";
+"Monospaced font" = "Skrifttype med fast bredde";
+"Reverse order" = "Reversert rekkefølge";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "Åpne modulinnstillinger";
@@ -191,18 +235,25 @@
 "Top processes" = "Topp-prosesser";
 "Pictogram" = "Piktogram";
 "Module" = "Modul";
-"Widgets" = "Widgets";
+"Widgets" = "Widgeter";
 "Popup" = "Popup";
 "Notifications" = "Varsler";
 "Merge widgets" = "Slå sammen diagrammer";
 "No available widgets to configure" = "Ingen tilgjengelige diagrammer å konfigurere";
 "No options to configure for the popup in this module" = "Ingen innstillinger å konfigurere for popup-en i denne modulen";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "Antall topp-prosesser";
 "Update interval for top processes" = "Oppdateringsintervall for topp-prosesser";
 "Notification level" = "Varslingsnivå";
 "Chart color" = "Diagramfarge";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "CPU-bruk";
@@ -228,8 +279,14 @@
 "User color" = "Brukerfarge";
 "Idle color" = "Tomgangsfarge";
 "Cluster grouping" = "Klyngegruppering";
-"Efficiency cores color" = "Efficiency cores color";
-"Performance cores color" = "Performance cores color";
+"Efficiency cores color" = "Farge på effektivitetskjerner";
+"Performance cores color" = "Farge på ytelseskjerner";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "GPU å vise";
@@ -269,6 +326,9 @@
 "Wired color" = "Bundet farge";
 "Compressed color" = "Komprimert farge";
 "Free color" = "Ledig farge";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "Vis utløsbare disker";
@@ -279,16 +339,22 @@
 "Switch view" = "Bytt visning";
 "Disk utilization threshold" = "Disk-bruksgrense";
 "Disk utilization is" = "Disk-bruk er %0";
-"Read color" = "Read color";
-"Write color" = "Write color";
-"Disk usage" = "Disk usage";
+"Read color" = "Lesefarge";
+"Write color" = "Skrivefarge";
+"Disk usage" = "Diskbruk";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "Temperaturenhet";
 "Celsius" = "Celsius";
 "Fahrenheit" = "Fahrenheit";
 "Save the fan speed" = "Lagre viftehastighet";
-"Fan" = "Fan";
+"Fan" = "Vifte";
 "HID sensors" = "HID-sensorer";
 "Synchronize fan's control" = "Synkroniser viftekontroll";
 "Current" = "Nåværende";
@@ -296,9 +362,14 @@
 "Show unknown sensors" = "Vis ukjente sensorer";
 "Install fan helper" = "Installer viftehjelper";
 "Uninstall fan helper" = "Avinstaller viftehjelper";
-"Fan value" = "Fan value";
-"Turn off fan" = "Turn off fan";
-"You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Fan value" = "Vifteverdi";
+"Turn off fan" = "Slå av viften";
+"You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "Du slå nå av viften. Dette er en ikke-anbefalt handling som kan skade Mac-en din, er du sikker på at vil gjøre dette?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "Opplasting";
@@ -332,14 +403,18 @@
 "Nonactive state color" = "Inaktiv statusfarge";
 "Connectivity host (ICMP)" = "Tilkoblingsvert (ICMP)";
 "Leave empty to disable the check" = "La stå tom for å deaktivere sjekken";
-"Transparent pictogram when no activity" = "Gjennomsiktig piktogram når ingen aktivitet";
-"Connectivity history" = "Connectivity history";
-"Auto-refresh public IP address" = "Auto-refresh public IP address";
-"Every hour" = "Every hour";
-"Every 12 hours" = "Every 12 hours";
-"Every 24 hours" = "Every 24 hours";
-"Network activity" = "Network activity";
-"Last reset" = "Last reset %0 ago";
+"Connectivity history" = "Tilkoblingshistorikk";
+"Auto-refresh public IP address" = "Auto-oppfrisk offentlig IP-adresse";
+"Every hour" = "Hver time";
+"Every 12 hours" = "Hver 12. time";
+"Every 24 hours" = "Hver 24. time";
+"Network activity" = "Nettverksaktivitet";
+"Last reset" = "Sist nullstilt %0 siden";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "Nivå";
@@ -376,15 +451,23 @@
 "current / maximum / designed" = "current / maksimum / tiltenkt";
 "Low power mode" = "Lav energi-modus";
 "Percentage inside the icon" = "Prosent inne i ikonet";
-"Colorize battery" = "Colorize battery";
+"Colorize battery" = "Fargelegg batteri";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
-"Battery to show" = "Battery å vise";
+"Battery to show" = "Batteri å vise";
 "No Bluetooth devices are available" = "Ingen Bluetooth-enheter er tilgjengelige";
 
 // Clock
-"Time zone" = "Time zone";
-"Local" = "Local";
+"Time zone" = "Tidssone";
+"Local" = "Lokal";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "Basert på bruk";

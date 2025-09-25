@@ -69,11 +69,37 @@
 "Square" = "Négyzet";
 "Cube" = "Kocka";
 "Logarithmic" = "Logaritmikus";
+"Fixed scale" = "Fixed";
 "Cores" = "Magok";
 "Settings" = "Beállítások";
 "Name" = "Név";
 "Format" = "Formátum";
-"Turn off" = "Turn off";
+"Turn off" = "Kikapcsolás";
+"Normal" = "Normal";
+"Warning" = "Figyelmeztetés";
+"Critical" = "Kritikus";
+"Usage" = "Használat";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "A Stats beállítása";
@@ -93,9 +119,9 @@
 "Check for a new version every week (once a week)" = "Új verzió keresése minden héten (heti egyszer)";
 "Check for a new version every month (once a month)" = "Új verzió keresése minden hónapban (havi egyszer)";
 "Never check for updates (not recommended)" = "Ne keressen frissítéseket (nem ajánlott)";
-"Anonymous telemetry for better development decisions" = "Anonymous telemetry for better development decisions";
-"Share anonymous telemetry data" = "Share anonymous telemetry data";
-"Do not share anonymous telemetry data" = "Do not share anonymous telemetry data";
+"Anonymous telemetry for better development decisions" = "Névtelen telemetria a jobb fejlesztői döntések érdekében";
+"Share anonymous telemetry data" = "Névtelen telemetriai adatok megosztása";
+"Do not share anonymous telemetry data" = "Ne osszon meg névtelen telemetriai adatokat";
 "The configuration is completed" = "A konfiguráció befejezve";
 "finish_setup_message" = "Minden beállítva!\nA Stats egy nyílt forráskódú eszköz, ami ingyenes és az is marad.\nHa hasznosnak találod, támogathatod a fejlesztését, mindig nagyra értékeljük!";
 
@@ -105,6 +131,7 @@
 "Successfully updated" = "Sikeres frissítés";
 "Stats was updated to v" = "A Stats sikeresen frissítve lett a(z) v%0 verzióra";
 "Reset settings text" = "Minden alkalmazás beállítás alaphelyzetbe fog állni, és az alkalmazás újra fog indulni. Biztosan ezt szeretnéd?";
+"Support text" = "Köszönjük, hogy használja a Stats-t!\n\n A nyílt forráskódú projekt fenntartása és fejlesztése időt és erőforrásokat igényel. Az Ön támogatása segít nekünk abban, hogy továbbra is ingyenes és megbízható alkalmazást nyújtsunk mindenkinek.\n\nHa hasznosnak találja a Stats-t, kérjük, fontolja meg, hogy hozzájáruljon. Minden kis aprócska összeg segít!";
 
 // Settings
 "Open Activity Monitor" = "Tevékenységfigyelő megnyitása";
@@ -113,6 +140,9 @@
 "Close application" = "Alkalmazás bezárása";
 "Open application settings" = "Beállítások megnyitása";
 "Open dashboard" = "Irányítópult megnyitása";
+"No notifications available in this module" = "Nincsenek elérhető értesítések ebben a modulban";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "Alkalmazás frissítése";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "Ikon megjelenítése a Dockban";
 "Start at login" = "Alkalmazás indítása bejelentkezéskor";
 "Build number" = "Verziószám";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "Beállítások alaphelyzetbe állítása";
 "Pause the Stats" = "Stats felfüggesztése";
 "Resume the Stats" = "Stats folytatása";
 "Combined modules" = "Egyesített modulok";
+"Combined details" = "Combined details";
 "Spacing" = "Helyköz";
-"Share anonymous telemetry" = "Share anonymous telemetry";
+"Share anonymous telemetry" = "Telemetria megosztása névtelenül";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "Sorozatszám";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "Indítás óta eltel idő";
 "Number of cores" = "%0 mag";
 "Number of threads" = "%0 szál";
 "Number of e-cores" = "%0 energiatakarékos mag";
 "Number of p-cores" = "%0 teljesítményre optimalizált mag";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "A Stats legújabb verziója van telepítve";
@@ -173,13 +211,19 @@
 "Static width" = "Fix szélesség";
 "Tachometer widget" = "Fordulatszámmérő";
 "State widget" = "Állapot";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "Szimbólumok mutatása";
 "Label widget" = "Címke";
 "Number of reads in the chart" = "Értékek száma a grafikonon";
 "Color of download" = "Letöltés színe";
 "Color of upload" = "Feltöltés színe";
 "Monospaced font" = "Mono betűtípus";
-"Reverse order" = "Reverse order";
+"Reverse order" = "Fordított sorrend";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "Modul beállításainak megnyitása";
@@ -197,12 +241,19 @@
 "Merge widgets" = "Widgetek egyesítése";
 "No available widgets to configure" = "Nincs elérhető widget a beállításhoz";
 "No options to configure for the popup in this module" = "A modul lenyíló ablakához nem tartozik beállítás";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "Top folyamatok száma";
 "Update interval for top processes" = "Top folyamatok frissítési időköze";
 "Notification level" = "Értesítési szint";
 "Chart color" = "Diagram színe";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "CPU használat";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "Csoportosítás";
 "Efficiency cores color" = "Energiatakarékos magok színe";
 "Performance cores color" = "Teljesítmény magok színe";
+"Total load" = "Teljes terheltség";
+"System load" = "Rendszer terheltség";
+"User load" = "Felhasználó terheltség";
+"Efficiency cores load" = "Energiatakarékos magok terheltsége";
+"Performance cores load" = "Teljesítmény magok terheltsége";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "Megjelenítendő GPU";
@@ -269,6 +326,9 @@
 "Wired color" = "Nem lapozható színe";
 "Compressed color" = "Tömörített színe";
 "Free color" = "Szabad színe";
+"Free memory (less than)" = "Szabad memória (kevesebb mint)";
+"Swap size" = "Swap mérete";
+"Free RAM is" = "%0 a szabad RAM";
 
 // Disk
 "Show removable disks" = "Eltávolítható adattárolók megjelenítése";
@@ -282,6 +342,12 @@
 "Read color" = "Olvasás színe";
 "Write color" = "Írás színe";
 "Disk usage" = "Lemez használat";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "Hőmérséklet mértékegysége";
@@ -294,11 +360,16 @@
 "Current" = "Áramerősség";
 "Energy" = "Energia";
 "Show unknown sensors" = "Ismeretlen szenzorok megjelenítése";
-"Install fan helper" = "Ventillátor segítő telepítése";
-"Uninstall fan helper" = "Ventillátor segítő törlése";
-"Fan value" = "Ventillátor érték";
-"Turn off fan" = "Turn off fan";
-"You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Install fan helper" = "Ventilátor segítő telepítése";
+"Uninstall fan helper" = "Ventilátor segítő törlése";
+"Fan value" = "Ventilátor érték";
+"Turn off fan" = "Ventilátor kikapcsolása";
+"You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "A ventilátor ki lesz kapcsolva. Ez a művelet károsíthatja a macjét, ezért nem ajánlott. Biztosan ki akarja kapcsolni a ventilátort?";
+"Sensor threshold" = "Szenzor küszöb";
+"Left fan" = "Bal ventilátor";
+"Right fan" = "Jobb ventilátor";
+"Fastest fan" = "Leggyorsabb ventilátor";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "Feltöltés";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "Inaktív állapot színe";
 "Connectivity host (ICMP)" = "Kapcsolati gazdagép (ICMP)";
 "Leave empty to disable the check" = "Hagyd üresen az ellenőrzés kikapcsolásához";
-"Transparent pictogram when no activity" = "Átlátszó ikon, ha nincs forgalom";
 "Connectivity history" = "Kapcsolati előzmények";
 "Auto-refresh public IP address" = "Publikus IP cím automatikus frissítése";
 "Every hour" = "Óránként";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "24 óránként";
 "Network activity" = "Hálózati tevékenység";
 "Last reset" = "Utolsó visszaállítás óta eltelt idő: %0";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "Töltöttségi szint";
@@ -376,7 +451,10 @@
 "current / maximum / designed" = "jelenlegi / maximum / gyári";
 "Low power mode" = "Energia takarékos mód";
 "Percentage inside the icon" = "Százalék megjelenítése az ikonban";
-"Colorize battery" = "Akuumlátor színezése";
+"Colorize battery" = "Akkumlátor színezése";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "Akkumulátor megjelenítése";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Időzóna";
 "Local" = "Helyi";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "Használat függő";

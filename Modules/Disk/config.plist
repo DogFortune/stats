@@ -94,10 +94,19 @@
 			<key>Icon</key>
 			<string>chars</string>
 			<key>Symbols</key>
-			<array>
+			<dict>
+				<key>Output</key>
 				<string>W</string>
+				<key>Input</key>
 				<string>R</string>
-			</array>
+			</dict>
+			<key>Words</key>
+			<dict>
+				<key>Output</key>
+				<string>Write speed</string>
+				<key>Input</key>
+				<string>Read speed</string>
+			</dict>
 			<key>Order</key>
 			<integer>5</integer>
 		</dict>
@@ -105,6 +114,8 @@
 		<dict>
 			<key>Default</key>
 			<false/>
+			<key>Title</key>
+			<string>SSD</string>
 			<key>Order</key>
 			<integer>6</integer>
 			<key>Unsupported colors</key>
@@ -114,6 +125,20 @@
 				<string>system</string>
 			</array>
 		</dict>
+		<key>text</key>
+		<dict>
+			<key>Default</key>
+			<false/>
+			<key>Order</key>
+			<integer>7</integer>
+		</dict>
+	</dict>
+	<key>Settings</key>
+	<dict>
+		<key>popup</key>
+		<true/>
+		<key>notifications</key>
+		<true/>
 	</dict>
 </dict>
 </plist>

@@ -16,7 +16,7 @@ internal class Popup: PopupWrapper {
     private let emptyView: EmptyView = EmptyView(height: 30, isHidden: false, msg: localizedString("No Bluetooth devices are available"))
     
     public init() {
-        super.init(frame: NSRect(x: 0, y: 0, width: Constants.Popup.width, height: 30))
+        super.init(ModuleType.bluetooth, frame: NSRect(x: 0, y: 0, width: Constants.Popup.width, height: 30))
         
         self.orientation = .vertical
         self.spacing = Constants.Popup.margins
@@ -80,6 +80,7 @@ internal class BLEView: NSStackView {
         self.alignment = .centerY
         self.spacing = 0
         self.wantsLayer = true
+        self.edgeInsets = NSEdgeInsets(top: 0, left: 5, bottom: 0, right: 5)
         self.layer?.cornerRadius = 2
         
         let nameView: NSTextField = TextView(frame: NSRect(x: 0, y: 0, width: 0, height: 16))

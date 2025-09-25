@@ -13,18 +13,15 @@ import Cocoa
 
 public class Mini: WidgetWrapper {
     private var labelState: Bool = true
-    private var colorState: Color = .monochrome
+    private var colorState: SColor = .monochrome
     private var alignmentState: String = "left"
     
-    private var labelLayer: CATextLayer? = nil
-    private var valueLayer: CATextLayer? = nil
-    
-    private let onlyValueWidth: CGFloat = 40
-    private var colors: [Color] = Color.allCases
+    private var colors: [SColor] = SColor.allCases
     
     private var _value: Double = 0
-    private var _pressureLevel: DispatchSource.MemoryPressureEvent = .normal
+    private var _pressureLevel: RAMPressure = .normal
     private var _colorZones: colorZones = (0.6, 0.8)
+    private var _suffix: String = "%"
     
     private var defaultLabel: String
     private var _label: String
@@ -82,7 +79,7 @@ public class Mini: WidgetWrapper {
         self.canDrawConcurrently = true
         
         if !preview {
-            self.colorState = Color.fromString(Store.shared.string(key: "\(self.title)_\(self.type.rawValue)_color", defaultValue: self.colorState.key))
+            self.colorState = SColor.fromString(Store.shared.string(key: "\(self.title)_\(self.type.rawValue)_color", defaultValue: self.colorState.key))
             self.labelState = Store.shared.bool(key: "\(self.title)_\(self.type.rawValue)_label", defaultValue: self.labelState)
             self.alignmentState = Store.shared.string(key: "\(self.title)_\(self.type.rawValue)_alignment", defaultValue: self.alignmentState)
         }
@@ -96,14 +93,16 @@ public class Mini: WidgetWrapper {
         super.draw(dirtyRect)
         
         var value: Double = 0
-        var pressureLevel: DispatchSource.MemoryPressureEvent = .normal
+        var pressureLevel: RAMPressure = .normal
         var colorZones: colorZones = (0.6, 0.8)
         var label: String = ""
+        var suffix: String = ""
         self.queue.sync {
             value = self._value
             pressureLevel = self._pressureLevel
             colorZones = self._colorZones
             label = self._label
+            suffix = self._suffix
         }
         
         let valueSize: CGFloat = self.labelState ? 12 : 14
@@ -142,7 +141,7 @@ public class Mini: WidgetWrapper {
             NSAttributedString.Key.paragraphStyle: style
         ]
         let rect = CGRect(x: origin.x, y: origin.y, width: self.width - (Constants.Widget.margin.x*2), height: valueSize+1)
-        let str = NSAttributedString.init(string: "\(Int(value.rounded(toPlaces: 2) * 100))%", attributes: stringAttributes)
+        let str = NSAttributedString.init(string: "\(Int(value.rounded(toPlaces: 2) * 100))\(suffix)", attributes: stringAttributes)
         str.draw(with: rect)
         
         self.setWidth(width)
@@ -156,7 +155,7 @@ public class Mini: WidgetWrapper {
         })
     }
     
-    public func setPressure(_ newPressureLevel: DispatchSource.MemoryPressureEvent) {
+    public func setPressure(_ newPressureLevel: RAMPressure) {
         guard self._pressureLevel != newPressureLevel else { return }
         self._pressureLevel = newPressureLevel
         DispatchQueue.main.async(execute: {
@@ -184,37 +183,42 @@ public class Mini: WidgetWrapper {
         })
     }
     
+    public func setSuffix(_ newSuffix: String) {
+        guard self._suffix != newSuffix else { return }
+        self._suffix = newSuffix
+        DispatchQueue.main.async(execute: {
+            self.display()
+        })
+    }
+    
     // MARK: - Settings
     
     public override func settings() -> NSView {
         let view = SettingsContainerView()
         
-        view.addArrangedSubview(toggleSettingRow(
-            title: localizedString("Label"),
-            action: #selector(self.toggleLabel),
-            state: self.labelState
-        ))
-        
-        view.addArrangedSubview(selectSettingsRow(
-            title: localizedString("Color"),
-            action: #selector(self.toggleColor),
-            items: self.colors,
-            selected: self.colorState.key
-        ))
-        
-        view.addArrangedSubview(selectSettingsRow(
-            title: localizedString("Alignment"),
-            action: #selector(self.toggleAlignment),
-            items: Alignments,
-            selected: self.alignmentState
-        ))
+        view.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Label"), component: switchView(
+                action: #selector(self.toggleLabel),
+                state: self.labelState
+            )),
+            PreferencesRow(localizedString("Color"), component: selectView(
+                action: #selector(self.toggleColor),
+                items: self.colors,
+                selected: self.colorState.key
+            )),
+            PreferencesRow(localizedString("Alignment"), component: selectView(
+                action: #selector(self.toggleAlignment),
+                items: Alignments,
+                selected: self.alignmentState
+            ))
+        ]))
         
         return view
     }
     
     @objc private func toggleColor(_ sender: NSMenuItem) {
         guard let key = sender.representedObject as? String else { return }
-        if let newColor = Color.allCases.first(where: { $0.key == key }) {
+        if let newColor = SColor.allCases.first(where: { $0.key == key }) {
             self.colorState = newColor
         }
         Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_color", value: key)

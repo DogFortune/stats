@@ -18,68 +18,184 @@ class ApplicationSettings: NSStackView {
     }
     
     private var temperatureUnitsValue: String {
-        get {
-            Store.shared.string(key: "temperature_units", defaultValue: "system")
-        }
-        set {
-            Store.shared.set(key: "temperature_units", value: newValue)
-        }
+        get { Store.shared.string(key: "temperature_units", defaultValue: "system") }
+        set { Store.shared.set(key: "temperature_units", value: newValue) }
     }
     
     private var combinedModulesState: Bool {
-        get {
-            Store.shared.bool(key: "CombinedModules", defaultValue: false)
-        }
-        set {
-            Store.shared.set(key: "CombinedModules", value: newValue)
-        }
+        get { Store.shared.bool(key: "CombinedModules", defaultValue: false) }
+        set { Store.shared.set(key: "CombinedModules", value: newValue) }
     }
     private var combinedModulesSpacing: String {
-        get {
-            Store.shared.string(key: "CombinedModules_spacing", defaultValue: "none")
-        }
-        set {
-            Store.shared.set(key: "CombinedModules_spacing", value: newValue)
-        }
+        get { Store.shared.string(key: "CombinedModules_spacing", defaultValue: "none") }
+        set { Store.shared.set(key: "CombinedModules_spacing", value: newValue) }
     }
+    private var combinedModulesSeparator: Bool {
+        get { Store.shared.bool(key: "CombinedModules_separator", defaultValue: false) }
+        set { Store.shared.set(key: "CombinedModules_separator", value: newValue) }
+    }
+    private var combinedModulesPopup: Bool {
+        get { Store.shared.bool(key: "CombinedModules_popup", defaultValue: true) }
+        set { Store.shared.set(key: "CombinedModules_popup", value: newValue) }
+    }
+    
+    private var updateSelector: NSPopUpButton?
+    private var startAtLoginBtn: NSSwitch?
+    private var telemetryBtn: NSSwitch?
+    private var remoteControlBtn: NSSwitch?
+    
+    private var combinedModulesView: PreferencesSection?
+    private var fanHelperView: PreferencesSection?
+    private var remoteView: PreferencesSection?
     
     private let updateWindow: UpdateWindow = UpdateWindow()
     private let moduleSelector: ModuleSelectorView = ModuleSelectorView()
-    private var updateSelector: NSPopUpButton?
-    private var startAtLoginBtn: NSButton?
-    private var uninstallHelperButton: NSButton?
-    private var buttonsContainer: NSStackView?
-    private var telemetryBtn: NSButton?
     
-    private var combinedModules: NSView?
-    private var combinedModulesSeparator: NSView?
+    private var CPUeButton: NSButton?
+    private var CPUpButton: NSButton?
+    private var GPUButton: NSButton?
+    
+    private var CPUeTest: CPUeStressTest = CPUeStressTest()
+    private var CPUpTest: CPUpStressTest = CPUpStressTest()
+    private var GPUTest: GPUStressTest? = GPUStressTest()
     
     init() {
         super.init(frame: NSRect(x: 0, y: 0, width: Constants.Settings.width, height: Constants.Settings.height))
-        
         self.translatesAutoresizingMaskIntoConstraints = false
         
-        let scrollView = ScrollableStackView()
-        scrollView.stackView.spacing = 0
+        let scrollView = ScrollableStackView(orientation: .vertical)
+        scrollView.stackView.edgeInsets = NSEdgeInsets(
+            top: 0,
+            left: Constants.Settings.margin,
+            bottom: Constants.Settings.margin,
+            right: Constants.Settings.margin
+        )
+        scrollView.stackView.spacing = Constants.Settings.margin
         
         scrollView.stackView.addArrangedSubview(self.informationView())
-        scrollView.stackView.addArrangedSubview(self.separatorView())
-        scrollView.stackView.addArrangedSubview(self.settingsView())
-        scrollView.stackView.addArrangedSubview(self.separatorView())
-        scrollView.stackView.addArrangedSubview(self.combinedModulesView())
-        let separator = self.separatorView()
-        self.combinedModulesSeparator = separator
-        scrollView.stackView.addArrangedSubview(separator)
-        scrollView.stackView.addArrangedSubview(self.buttonsView())
         
-        self.toggleCombinedModulesView()
+        self.updateSelector = selectView(
+            action: #selector(self.toggleUpdateInterval),
+            items: AppUpdateIntervals,
+            selected: self.updateIntervalValue
+        )
+        self.startAtLoginBtn = switchView(
+            action: #selector(self.toggleLaunchAtLogin),
+            state: LaunchAtLogin.isEnabled
+        )
+        self.telemetryBtn = switchView(
+            action: #selector(self.toggleTelemetry),
+            state: Telemetry.shared.isEnabled
+        )
+        
+        scrollView.stackView.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Check for updates"), component: self.updateSelector!),
+            PreferencesRow(localizedString("Temperature"), component: selectView(
+                action: #selector(self.toggleTemperatureUnits),
+                items: TemperatureUnits,
+                selected: self.temperatureUnitsValue
+            )),
+            PreferencesRow(localizedString("Show icon in dock"), component: switchView(
+                action: #selector(self.toggleDock),
+                state: Store.shared.bool(key: "dockIcon", defaultValue: false)
+            )),
+            PreferencesRow(localizedString("Start at login"), component: self.startAtLoginBtn!),
+            PreferencesRow(localizedString("Share anonymous telemetry"), component: self.telemetryBtn!)
+        ]))
+        
+        self.combinedModulesView = PreferencesSection([
+            PreferencesRow(localizedString("Combined modules"), component: switchView(
+                action: #selector(self.toggleCombinedModules),
+                state: self.combinedModulesState
+            )),
+            PreferencesRow(component: self.moduleSelector),
+            PreferencesRow(localizedString("Spacing"), component: selectView(
+                action: #selector(self.toggleCombinedModulesSpacing),
+                items: CombinedModulesSpacings,
+                selected: self.combinedModulesSpacing
+            )),
+            PreferencesRow(localizedString("Separator"), component: switchView(
+                action: #selector(self.toggleCombinedModulesSeparator),
+                state: self.combinedModulesSeparator
+            )),
+            PreferencesRow(localizedString("Combined details"), component: switchView(
+                action: #selector(self.toggleCombinedModulesPopup),
+                state: self.combinedModulesPopup
+            ))
+        ])
+        scrollView.stackView.addArrangedSubview(self.combinedModulesView!)
+        self.combinedModulesView?.setRowVisibility(1, newState: self.combinedModulesState)
+        self.combinedModulesView?.setRowVisibility(2, newState: self.combinedModulesState)
+        self.combinedModulesView?.setRowVisibility(3, newState: self.combinedModulesState)
+        self.combinedModulesView?.setRowVisibility(4, newState: self.combinedModulesState)
+        
+        self.remoteControlBtn = switchView(
+            action: #selector(self.toggleRemoteControlState),
+            state: Remote.shared.control
+        )
+        self.remoteView = PreferencesSection(label: localizedString("Remote (beta)"), [
+            PreferencesRow(localizedString("Authorization"), component: buttonView(#selector(self.loginToRemote), text: localizedString("Login"))),
+            PreferencesRow(localizedString("Identificator"), component: textView(Remote.shared.id.uuidString)),
+            PreferencesRow(localizedString("Monitoring"), component: switchView(
+                action: #selector(self.toggleRemoteMonitoringState),
+                state: Remote.shared.monitoring
+            )),
+            PreferencesRow(localizedString("Control"), component: self.remoteControlBtn!),
+            PreferencesRow(component: buttonView(#selector(self.logoutFromRemote), text: localizedString("Logout")))
+        ])
+        scrollView.stackView.addArrangedSubview(self.remoteView!)
+        self.remoteView?.setRowVisibility(1, newState: false)
+        self.remoteView?.setRowVisibility(2, newState: false)
+        self.remoteView?.setRowVisibility(3, newState: false)
+        self.remoteView?.setRowVisibility(4, newState: false)
+        
+        scrollView.stackView.addArrangedSubview(PreferencesSection(label: localizedString("Settings"), [
+            PreferencesRow(
+                localizedString("Export settings"),
+                component: buttonView(#selector(self.exportSettings), text: localizedString("Save"))
+            ),
+            PreferencesRow(
+                localizedString("Import settings"),
+                component: buttonView(#selector(self.importSettings), text: localizedString("Choose file"))
+            ),
+            PreferencesRow(
+                localizedString("Reset settings"),
+                component: buttonView(#selector(self.resetSettings), text: localizedString("Reset"))
+            )
+        ]))
+        
+        self.fanHelperView = PreferencesSection([
+            PreferencesRow(
+                localizedString("Uninstall fan helper"),
+                component: buttonView(#selector(self.uninstallHelper), text: localizedString("Uninstall"))
+            )
+        ])
+        scrollView.stackView.addArrangedSubview(self.fanHelperView!)
         
         self.addArrangedSubview(scrollView)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(toggleUninstallHelperButton), name: .fanHelperState, object: nil)
+        let CPUeButton = buttonView(#selector(self.toggleCPUeStressTest), text: localizedString("Run"))
+        let CPUpButton = buttonView(#selector(self.toggleCPUpStressTest), text: localizedString("Run"))
+        let GPUButton = buttonView(#selector(self.toggleGPUStressTest), text: localizedString("Run"))
+        
+        self.CPUeButton = CPUeButton
+        self.CPUpButton = CPUpButton
+        self.GPUButton = GPUButton
+        
+        var tests = [
+            PreferencesRow(localizedString("Efficiency cores"), component: CPUeButton),
+            PreferencesRow(localizedString("Performance cores"), component: CPUpButton)
+        ]
+        if self.GPUTest != nil {
+            tests.append(PreferencesRow(localizedString("GPU"), component: GPUButton))
+        }
+        scrollView.stackView.addArrangedSubview(PreferencesSection(label: localizedString("Stress tests"), tests))
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(self.toggleUninstallHelperButton), name: .fanHelperState, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.handleRemoteState), name: .remoteState, object: nil)
     }
     
-    required public init?(coder: NSCoder) {
+    required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -87,9 +203,10 @@ class ApplicationSettings: NSStackView {
         NotificationCenter.default.removeObserver(self, name: .fanHelperState, object: nil)
     }
     
-    public func viewWillAppear() {
+    internal func viewWillAppear() {
         self.startAtLoginBtn?.state = LaunchAtLogin.isEnabled ? .on : .off
-        self.telemetryBtn?.state = telemetry.isEnabled ? .on : .off
+        self.telemetryBtn?.state = Telemetry.shared.isEnabled ? .on : .off
+        self.remoteControlBtn?.state = Remote.shared.control ? .on : .off
         
         var idx = self.updateSelector?.indexOfSelectedItem ?? 0
         if let items = self.updateSelector?.menu?.items {
@@ -104,7 +221,7 @@ class ApplicationSettings: NSStackView {
     
     private func informationView() -> NSView {
         let view = NSStackView()
-        view.heightAnchor.constraint(equalToConstant: 240).isActive = true
+        view.heightAnchor.constraint(equalToConstant: 220).isActive = true
         view.orientation = .vertical
         view.distribution = .fill
         view.alignment = .centerY
@@ -154,190 +271,9 @@ class ApplicationSettings: NSStackView {
         return view
     }
     
-    private func settingsView() -> NSView {
-        let view: NSStackView = NSStackView()
-        view.orientation = .vertical
-        view.edgeInsets = NSEdgeInsets(
-            top: Constants.Settings.margin,
-            left: Constants.Settings.margin,
-            bottom: Constants.Settings.margin,
-            right: Constants.Settings.margin
-        )
-        view.spacing = 10
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.widthAnchor.constraint(equalToConstant: self.frame.width - 15).isActive = true
-        
-        let grid: NSGridView = NSGridView(frame: NSRect(x: 0, y: 0, width: view.frame.width, height: 0))
-        grid.rowSpacing = 10
-        grid.columnSpacing = 20
-        grid.xPlacement = .trailing
-        grid.rowAlignment = .firstBaseline
-        grid.translatesAutoresizingMaskIntoConstraints = false
-        grid.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        grid.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        
-        self.updateSelector = selectView(
-            action: #selector(self.toggleUpdateInterval),
-            items: AppUpdateIntervals,
-            selected: self.updateIntervalValue
-        )
-        grid.addRow(with: [
-            self.titleView(localizedString("Check for updates")),
-            self.updateSelector!
-        ])
-        grid.addRow(with: [
-            self.titleView(localizedString("Temperature")),
-            selectView(
-                action: #selector(self.toggleTemperatureUnits),
-                items: TemperatureUnits,
-                selected: self.temperatureUnitsValue
-            )
-        ])
-        grid.addRow(with: [NSGridCell.emptyContentView, self.toggleView(
-            action: #selector(self.toggleDock),
-            state: Store.shared.bool(key: "dockIcon", defaultValue: false),
-            text: localizedString("Show icon in dock")
-        )])
-        self.startAtLoginBtn = self.toggleView(
-            action: #selector(self.toggleLaunchAtLogin),
-            state: LaunchAtLogin.isEnabled,
-            text: localizedString("Start at login")
-        )
-        grid.addRow(with: [NSGridCell.emptyContentView, self.startAtLoginBtn!])
-        
-        self.telemetryBtn = self.toggleView(
-            action: #selector(self.toggleTelemetry),
-            state: telemetry.isEnabled,
-            text: localizedString("Share anonymous telemetry")
-        )
-        grid.addRow(with: [NSGridCell.emptyContentView, self.telemetryBtn!])
-        
-        grid.addRow(with: [NSGridCell.emptyContentView, self.toggleView(
-            action: #selector(self.toggleCombinedModules),
-            state: self.combinedModulesState,
-            text: localizedString("Combined modules")
-        )])
-        
-        view.addArrangedSubview(grid)
-        
-        return view
-    }
-    
-    private func combinedModulesView() -> NSView {
-        let view: NSStackView = NSStackView()
-        view.orientation = .vertical
-        view.edgeInsets = NSEdgeInsets(
-            top: Constants.Settings.margin,
-            left: Constants.Settings.margin,
-            bottom: Constants.Settings.margin,
-            right: Constants.Settings.margin
-        )
-        view.spacing = 10
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.widthAnchor.constraint(equalToConstant: self.frame.width - 15).isActive = true
-        
-        let grid: NSGridView = NSGridView(frame: NSRect(x: 0, y: 0, width: view.frame.width, height: 0))
-        grid.rowSpacing = 10
-        grid.columnSpacing = 20
-        grid.xPlacement = .trailing
-        grid.rowAlignment = .firstBaseline
-        grid.translatesAutoresizingMaskIntoConstraints = false
-        grid.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        grid.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        
-        grid.addRow(with: [
-            self.titleView(localizedString("Spacing")),
-            selectView(
-                action: #selector(self.toggleCombinedModulesSpacing),
-                items: CombinedModulesSpacings,
-                selected: self.combinedModulesSpacing
-            )
-        ])
-        
-        view.addArrangedSubview(self.moduleSelector)
-        view.addArrangedSubview(grid)
-        
-        self.combinedModules = view
-        return view
-    }
-    
-    private func buttonsView() -> NSView {
-        let view: NSView = NSView(frame: NSRect(x: 0, y: 0, width: self.frame.width, height: 60))
-        view.heightAnchor.constraint(equalToConstant: 60).isActive = true
-        
-        let row = NSStackView()
-        row.translatesAutoresizingMaskIntoConstraints = false
-        row.orientation = .vertical
-        row.alignment = .centerY
-        row.distribution = .fill
-        self.buttonsContainer = row
-        
-        let reset: NSButton = NSButton()
-        reset.title = localizedString("Reset settings")
-        reset.bezelStyle = .rounded
-        reset.target = self
-        reset.action = #selector(self.resetSettings)
-        
-        let uninstall: NSButton = NSButton()
-        uninstall.title = localizedString("Uninstall fan helper")
-        uninstall.bezelStyle = .rounded
-        uninstall.target = self
-        uninstall.action = #selector(self.uninstallHelper)
-        self.uninstallHelperButton = uninstall
-        
-        row.addArrangedSubview(reset)
-        if SMCHelper.shared.isInstalled {
-            row.addArrangedSubview(uninstall)
-        }
-        
-        view.addSubview(row)
-        
-        NSLayoutConstraint.activate([
-            row.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            row.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-        
-        return view
-    }
-    
-    // MARK: - helpers
-    
-    private func separatorView() -> NSBox {
-        let view = NSBox()
-        view.boxType = .separator
-        return view
-    }
-    
-    private func titleView(_ value: String) -> NSTextField {
-        let field: NSTextField = TextView(frame: NSRect(x: 0, y: 0, width: 120, height: 17))
-        field.font = NSFont.systemFont(ofSize: 13, weight: .regular)
-        field.textColor = .secondaryLabelColor
-        field.stringValue = value
-        
-        return field
-    }
-    
-    private func toggleView(action: Selector, state: Bool, text: String) -> NSButton {
-        let button: NSButton = NSButton(frame: NSRect(x: 0, y: 0, width: 30, height: 20))
-        button.setButtonType(.switch)
-        button.state = state ? .on : .off
-        button.title = text
-        button.action = action
-        button.isBordered = false
-        button.isTransparent = false
-        button.target = self
-        
-        return button
-    }
-    
-    private func toggleCombinedModulesView() {
-        self.combinedModules?.isHidden = !self.combinedModulesState
-        self.combinedModulesSeparator?.isHidden = !self.combinedModulesState
-    }
-    
     // MARK: - actions
     
-    @objc private func updateAction(_ sender: NSObject) {
+    @objc private func updateAction() {
         updater.check(force: true, completion: { result, error in
             if error != nil {
                 debug("error updater.check(): \(error!.localizedDescription)")
@@ -368,7 +304,6 @@ class ApplicationSettings: NSStackView {
     
     @objc private func toggleDock(_ sender: NSButton) {
         let state = sender.state
-        
         Store.shared.set(key: "dockIcon", value: state == NSControl.StateValue.on)
         let dockIconStatus = state == NSControl.StateValue.on ? NSApplication.ActivationPolicy.regular : NSApplication.ActivationPolicy.accessory
         NSApp.setActivationPolicy(dockIconStatus)
@@ -384,41 +319,16 @@ class ApplicationSettings: NSStackView {
         }
     }
     
-    @objc private func resetSettings(_ sender: NSObject) {
-        let alert = NSAlert()
-        alert.messageText = localizedString("Reset settings")
-        alert.informativeText = localizedString("Reset settings text")
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: localizedString("Yes"))
-        alert.addButton(withTitle: localizedString("No"))
-        
-        if alert.runModal() == .alertFirstButtonReturn {
-            Store.shared.reset()
-            if let path = Bundle.main.resourceURL?.deletingLastPathComponent().deletingLastPathComponent().absoluteString {
-                asyncShell("/usr/bin/open \(path)")
-                NSApp.terminate(self)
-            }
-        }
-    }
-    
-    @objc private func toggleUninstallHelperButton(_ notification: Notification) {
-        guard let state = notification.userInfo?["state"] as? Bool, let v = self.uninstallHelperButton else {
-            return
-        }
-        if state && v.superview == nil {
-            self.buttonsContainer?.addArrangedSubview(v)
-        } else if !state && v.superview != nil {
-            v.removeFromSuperview()
-        }
-    }
-    
-    @objc private func uninstallHelper() {
-        SMCHelper.shared.uninstall()
+    @objc private func toggleTelemetry(_ sender: NSButton) {
+        Telemetry.shared.isEnabled = sender.state == NSControl.StateValue.on
     }
     
     @objc private func toggleCombinedModules(_ sender: NSButton) {
         self.combinedModulesState = sender.state == NSControl.StateValue.on
-        self.toggleCombinedModulesView()
+        self.combinedModulesView?.setRowVisibility(1, newState: self.combinedModulesState)
+        self.combinedModulesView?.setRowVisibility(2, newState: self.combinedModulesState)
+        self.combinedModulesView?.setRowVisibility(3, newState: self.combinedModulesState)
+        self.combinedModulesView?.setRowVisibility(4, newState: self.combinedModulesState)
         NotificationCenter.default.post(name: .toggleOneView, object: nil, userInfo: nil)
     }
     
@@ -428,8 +338,148 @@ class ApplicationSettings: NSStackView {
         NotificationCenter.default.post(name: .moduleRearrange, object: nil, userInfo: nil)
     }
     
-    @objc private func toggleTelemetry(_ sender: NSButton) {
-        telemetry.isEnabled = sender.state == NSControl.StateValue.on
+    @objc private func toggleCombinedModulesSeparator(_ sender: NSButton) {
+        self.combinedModulesSeparator = sender.state == NSControl.StateValue.on
+        NotificationCenter.default.post(name: .moduleRearrange, object: nil, userInfo: nil)
+    }
+    
+    @objc private func toggleCombinedModulesPopup(_ sender: NSButton) {
+        self.combinedModulesPopup = sender.state == NSControl.StateValue.on
+        NotificationCenter.default.post(name: .combinedModulesPopup, object: nil, userInfo: nil)
+    }
+    
+    @objc private func importSettings() {
+        let panel = NSOpenPanel()
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.modalPanelWindow)))
+        panel.begin { (result) in
+            guard result.rawValue == NSApplication.ModalResponse.OK.rawValue else { return }
+            if let url = panel.url {
+                Store.shared.import(from: url)
+            }
+        }
+    }
+    
+    @objc private func exportSettings() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "Stats.plist"
+        panel.showsTagField = false
+        panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.modalPanelWindow)))
+        panel.begin { (result) in
+            guard result.rawValue == NSApplication.ModalResponse.OK.rawValue else { return }
+            if let url = panel.url {
+                Store.shared.export(to: url)
+            }
+        }
+    }
+    
+    @objc private func resetSettings() {
+        let alert = NSAlert()
+        alert.messageText = localizedString("Reset settings")
+        alert.informativeText = localizedString("Reset settings text")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: localizedString("Yes"))
+        alert.addButton(withTitle: localizedString("No"))
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            Store.shared.reset()
+            restartApp(self)
+        }
+    }
+    
+    @objc private func toggleUninstallHelperButton(_ notification: Notification) {
+        guard let state = notification.userInfo?["state"] as? Bool, let v = self.fanHelperView else {
+            return
+        }
+        v.isHidden = !state
+    }
+    
+    @objc private func uninstallHelper() {
+        SMCHelper.shared.uninstall()
+    }
+    
+    @objc private func toggleCPUeStressTest() {
+        if self.CPUeTest.isRunning {
+            self.CPUeTest.stop()
+            self.CPUeButton?.title = localizedString("Run")
+        } else {
+            self.CPUeTest.start()
+            self.CPUeButton?.title = localizedString("Stop")
+        }
+    }
+    
+    @objc private func toggleCPUpStressTest() {
+        if self.CPUpTest.isRunning {
+            self.CPUpTest.stop()
+            self.CPUpButton?.title = localizedString("Run")
+        } else {
+            self.CPUpTest.start()
+            self.CPUpButton?.title = localizedString("Stop")
+        }
+    }
+    
+    @objc private func toggleGPUStressTest() {
+        guard let test = self.GPUTest else { return }
+        
+        if test.isRunning {
+            test.stop()
+            self.GPUButton?.title = localizedString("Run")
+        } else {
+            test.start()
+            self.GPUButton?.title = localizedString("Stop")
+        }
+    }
+    
+    @objc private func toggleRemoteMonitoringState(_ sender: NSButton) {
+        Remote.shared.monitoring = sender.state == NSControl.StateValue.on
+    }
+    @objc private func toggleRemoteControlState(_ sender: NSButton) {
+        if sender.state == .on {
+            let alert = NSAlert()
+            alert.messageText = localizedString("Warning")
+            alert.informativeText = localizedString("It is not recommended to enable remote control unless you know what you are doing.")
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: localizedString("Enable"))
+            alert.addButton(withTitle: localizedString("Cancel"))
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                Remote.shared.control = true
+            } else {
+                sender.state = .off
+            }
+        } else {
+            Remote.shared.control = false
+        }
+    }
+    
+    @objc private func handleRemoteState(_ notification: Notification) {
+        guard let auth = notification.userInfo?["auth"] as? Bool else { return }
+        self.setRemoteSettings(auth)
+    }
+    
+    @objc private func loginToRemote() {
+        Remote.shared.login()
+    }
+    
+    @objc private func logoutFromRemote() {
+        Remote.shared.logout()
+    }
+    
+    private func setRemoteSettings(_ auth: Bool) {
+        DispatchQueue.main.async {
+            if auth {
+                self.remoteView?.setRowVisibility(1, newState: true)
+                self.remoteView?.setRowVisibility(2, newState: true)
+                self.remoteView?.setRowVisibility(3, newState: true)
+                self.remoteView?.setRowVisibility(4, newState: true)
+                self.remoteView?.setRowVisibility(0, newState: false)
+            } else {
+                self.remoteView?.setRowVisibility(0, newState: true)
+                self.remoteView?.setRowVisibility(1, newState: false)
+                self.remoteView?.setRowVisibility(2, newState: false)
+                self.remoteView?.setRowVisibility(3, newState: false)
+                self.remoteView?.setRowVisibility(4, newState: false)
+            }
+        }
     }
 }
 
@@ -463,12 +513,17 @@ private class ModuleSelectorView: NSStackView {
             w += v.frame.width + self.spacing
         }
         
+        if w < 20 {
+            w = 20
+        }
+        
         self.addSubview(background, positioned: .below, relativeTo: .none)
         
         self.setFrameSize(NSSize(width: w, height: self.frame.height))
         background.setFrameSize(NSSize(width: w, height: self.frame.height))
         
         self.widthAnchor.constraint(equalToConstant: w).isActive = true
+        self.heightAnchor.constraint(equalToConstant: self.frame.height).isActive = true
     }
     
     required init?(coder: NSCoder) {
@@ -551,12 +606,10 @@ private class ModuleSelectorView: NSStackView {
     }
 }
 
-internal class ModulePreview: NSStackView {
-    private let id: String
+private class ModulePreview: NSStackView {
     private let imageView: NSImageView
     
-    public init(id: String, icon: NSImage?) {
-        self.id = id
+    fileprivate init(id: String, icon: NSImage?) {
         self.imageView = NSImageView(frame: NSRect(origin: .zero, size: NSSize(width: Constants.Widget.height, height: Constants.Widget.height)))
         
         let size: CGSize = CGSize(width: Constants.Widget.height + (Constants.Widget.spacing * 2), height: Constants.Widget.height)
@@ -569,7 +622,8 @@ internal class ModulePreview: NSStackView {
         self.layer?.backgroundColor = NSColor.white.cgColor
         
         self.identifier = NSUserInterfaceItemIdentifier(rawValue: id)
-        self.toolTip = localizedString("Move module", id)
+        self.setAccessibilityElement(true)
+        self.toolTip = id
         
         self.orientation = .vertical
         self.distribution = .fill

@@ -69,11 +69,37 @@
 "Square" = "Square";
 "Cube" = "Cube";
 "Logarithmic" = "Logarithmic";
+"Fixed scale" = "Fixed";
 "Cores" = "Cores";
 "Settings" = "Settings";
 "Name" = "Name";
 "Format" = "Format";
 "Turn off" = "Turn off";
+"Normal" = "Normal";
+"Warning" = "Warning";
+"Critical" = "Critical";
+"Usage" = "Usage";
+"2 minutes" = "2 minutes";
+"3 minutes" = "3 minutes";
+"10 minutes" = "10 minutes";
+"Import" = "Import";
+"Export" = "Export";
+"Separator" = "Separator";
+"Read" = "Read";
+"Write" = "Write";
+"Frequency" = "Frequency";
+"Save" = "Save";
+"Run" = "Run";
+"Stop" = "Stop";
+"Uninstall" = "Uninstall";
+"1 sec" = "1 sec";
+"2 sec" = "2 sec";
+"3 sec" = "3 sec";
+"5 sec" = "5 sec";
+"10 sec" = "10 sec";
+"15 sec" = "15 sec";
+"30 sec" = "30 sec";
+"60 sec" = "60 sec";
 
 // Setup
 "Stats Setup" = "Stats Setup";
@@ -105,6 +131,7 @@
 "Successfully updated" = "Pembaruan berhasil";
 "Stats was updated to v" = "Stats telah diperbarui v%0";
 "Reset settings text" = "Semua pengaturan aplikasi akan diatur ulang, dan aplikasi akan mengulang kembali. Anda yakin untuk melakukan ini?";
+"Support text" = "Terima kasih telah menggunakan Stats!\n\nMemelihara dan meningkatkan proyek sumber terbuka ini membutuhkan waktu dan sumber daya. Dukungan Anda membantu kami untuk terus menyediakan aplikasi yang gratis dan dapat diandalkan untuk semua orang.\n\nJika Anda merasa Stats bermanfaat, mohon pertimbangkan untuk memberikan kontribusi. Setiap hal kecil akan sangat membantu!";
 
 // Settings
 "Open Activity Monitor" = "Buka Monitor Aktivitas";
@@ -113,6 +140,9 @@
 "Close application" = "Tutup aplikasi";
 "Open application settings" = "Buka pengaturan aplikasi";
 "Open dashboard" = "Buka dasbor";
+"No notifications available in this module" = "No notifications available in this module";
+"Open Calendar" = "Open Calendar";
+"Toggle the module" = "Toggle the module";
 
 // Application settings
 "Update application" = "Perbarui aplikasi";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "Tampilkan ikon pada dok";
 "Start at login" = "Mulai saat login";
 "Build number" = "Build number";
+"Import settings" = "Import settings";
+"Export settings" = "Export settings";
 "Reset settings" = "Atur ulang pengaturan";
 "Pause the Stats" = "Pause the Stats";
 "Resume the Stats" = "Resume the Stats";
 "Combined modules" = "Combined modules";
+"Combined details" = "Combined details";
 "Spacing" = "Spacing";
 "Share anonymous telemetry" = "Share anonymous telemetry";
+"Choose file" = "Choose file";
+"Stress tests" = "Stress tests";
 
 // Dashboard
 "Serial number" = "Nomor serial";
+"Model identifier" = "Model identifier";
+"Production year" = "Production year";
 "Uptime" = "Waktu aktif";
 "Number of cores" = "%0 core";
 "Number of threads" = "%0 thread";
 "Number of e-cores" = "%0 efficiency cores";
 "Number of p-cores" = "%0 performance cores";
+"Disks" = "Disks";
 
 // Update
 "The latest version of Stats installed" = "Versi terbaru dari Stats telah dipasang";
@@ -173,6 +211,8 @@
 "Static width" = "Lebar statis";
 "Tachometer widget" = "Takometer";
 "State widget" = "State widget";
+"Text widget" = "Text widget";
+"Battery details widget" = "Battery details widget";
 "Show symbols" = "Tampilkan simbol";
 "Label widget" = "Label";
 "Number of reads in the chart" = "Jumlah yang dibaca pada diagram";
@@ -180,6 +220,10 @@
 "Color of upload" = "Warna pada unggahan";
 "Monospaced font" = "Fon monospasi";
 "Reverse order" = "Reverse order";
+"Chart history" = "Chart history";
+"Default color" = "Default";
+"Transparent when no activity" = "Transparent when no activity";
+"Constant color" = "Constant";
 
 // Module Kit
 "Open module settings" = "Buka pengaturan modul";
@@ -197,12 +241,19 @@
 "Merge widgets" = "Gabungkan widget";
 "No available widgets to configure" = "Tidak ada widget yang tersedia untuk dikonfigurasi";
 "No options to configure for the popup in this module" = "Tidak ada opsi untuk mengonfigurasi popup di modul ini";
+"Process" = "Process";
+"Kill process" = "Kill process";
+"Keyboard shortcut" = "Keyboard shortcut";
+"Listening..." = "Listening...";
 
 // Modules
 "Number of top processes" = "Jumlah dari proses teratas";
 "Update interval for top processes" = "Pembaruan waktu jeda dari proses teratas";
 "Notification level" = "Tingkat pemberitahuan";
 "Chart color" = "Warna bagan";
+"Main chart scaling" = "Main chart scaling";
+"Scale value" = "Scale value";
+"Text widget value" = "Text widget value";
 
 // CPU
 "CPU usage" = "Penggunaan CPU";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "Cluster grouping";
 "Efficiency cores color" = "Efficiency cores color";
 "Performance cores color" = "Performance cores color";
+"Total load" = "Total load";
+"System load" = "System load";
+"User load" = "User load";
+"Efficiency cores load" = "Efficiency cores load";
+"Performance cores load" = "Performance cores load";
+"All cores" = "All cores";
 
 // GPU
 "GPU to show" = "GPU yang ditampilkan";
@@ -269,6 +326,9 @@
 "Wired color" = "Wired color";
 "Compressed color" = "Compressed color";
 "Free color" = "Free color";
+"Free memory (less than)" = "Free memory (less than)";
+"Swap size" = "Swap size";
+"Free RAM is" = "Free RAM is %0";
 
 // Disk
 "Show removable disks" = "Tampilkan disk yang dapat dilepas";
@@ -282,6 +342,12 @@
 "Read color" = "Read color";
 "Write color" = "Write color";
 "Disk usage" = "Disk usage";
+"Total read" = "Total read";
+"Total written" = "Total written";
+"Write speed" = "Write";
+"Read speed" = "Read";
+"Drives" = "Drives";
+"SMART data" = "SMART data";
 
 // Sensors
 "Temperature unit" = "Unit suhu";
@@ -299,6 +365,11 @@
 "Fan value" = "Fan value";
 "Turn off fan" = "Turn off fan";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?";
+"Sensor threshold" = "Sensor threshold";
+"Left fan" = "Left";
+"Right fan" = "Right";
+"Fastest fan" = "Fastest";
+"Sensor to show" = "Sensor to show";
 
 // Network
 "Uploading" = "Unggah";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "Nonactive state color";
 "Connectivity host (ICMP)" = "Connectivity host (ICMP)";
 "Leave empty to disable the check" = "Leave empty to disable the check";
-"Transparent pictogram when no activity" = "Transparent pictogram when no activity";
 "Connectivity history" = "Connectivity history";
 "Auto-refresh public IP address" = "Auto-refresh public IP address";
 "Every hour" = "Every hour";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Every 24 hours";
 "Network activity" = "Network activity";
 "Last reset" = "Last reset %0 ago";
+"Latency" = "Latency";
+"Upload speed" = "Upload";
+"Download speed" = "Download";
+"Address" = "Address";
+"WiFi network" = "WiFi network";
 
 // Battery
 "Level" = "Level";
@@ -377,6 +452,9 @@
 "Low power mode" = "Low power mode";
 "Percentage inside the icon" = "Percentage inside the icon";
 "Colorize battery" = "Colorize battery";
+"Charging current" = "Charging current";
+"Charging Voltage" = "Charging voltage";
+"Charger state inside the battery" = "Charger state inside the battery";
 
 // Bluetooth
 "Battery to show" = "Baterai untuk ditampilkan";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Time zone";
 "Local" = "Local";
+"Calendar" = "Calendar";
+"Local time" = "Local time";
+"Add new clock" = "Add new clock";
+"Delete selected clock" = "Delete selected clock";
+"Help with datetime format" = "Help with datetime format";
 
 // Colors
 "Based on utilization" = "Berdasarkan pemanfaatan";

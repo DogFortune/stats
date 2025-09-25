@@ -20,12 +20,8 @@ private struct Sensor_t: KeyValue_p {
     var additional: Any?
     
     var index: Int {
-        get {
-            Store.shared.int(key: "sensors_\(self.key)_index", defaultValue: -1)
-        }
-        set {
-            Store.shared.set(key: "sensors_\(self.key)_index", value: newValue)
-        }
+        get { Store.shared.int(key: "sensors_\(self.key)_index", defaultValue: -1) }
+        set { Store.shared.set(key: "sensors_\(self.key)_index", value: newValue) }
     }
     
     init(key: String, value: String, name: String? = nil) {
@@ -38,38 +34,43 @@ private struct Sensor_t: KeyValue_p {
 internal class Popup: PopupWrapper {
     private var list: [String: NSView] = [:]
     
-    private var unknownSensorsState: Bool {
-        Store.shared.bool(key: "Sensors_unknown", defaultValue: false)
-    }
+    private var unknownSensorsState: Bool { Store.shared.bool(key: "Sensors_unknown", defaultValue: false) }
     private var fanValueState: FanValue = .percentage
     
     private var sensors: [Sensor_p] = []
-    private let settingsView: NSStackView = SettingsContainerView()
+    private let settingsView: NSStackView = NSStackView()
     
     private var fanControlState: Bool {
-        get {
-            Store.shared.bool(key: "Sensors_fanControl", defaultValue: true)
-        }
-        set {
-            Store.shared.set(key: "Sensors_fanControl", value: newValue)
-        }
+        get { Store.shared.bool(key: "Sensors_fanControl", defaultValue: true) }
+        set { Store.shared.set(key: "Sensors_fanControl", value: newValue) }
     }
     
     public init() {
-        super.init(frame: NSRect( x: 0, y: 0, width: Constants.Popup.width, height: 0))
+        super.init(ModuleType.sensors, frame: NSRect( x: 0, y: 0, width: Constants.Popup.width, height: 0))
+        
+        self.fanValueState = FanValue(rawValue: Store.shared.string(key: "Sensors_popup_fanValue", defaultValue: self.fanValueState.rawValue)) ?? .percentage
         
         self.orientation = .vertical
         self.spacing = 0
         self.translatesAutoresizingMaskIntoConstraints = false
         
-        self.settingsView.addArrangedSubview(selectSettingsRow(
-            title: localizedString("Fan value"),
-            action: #selector(self.toggleFanValue),
-            items: FanValues,
-            selected: self.fanValueState.rawValue
-        ))
+        self.settingsView.orientation = .vertical
+        self.settingsView.spacing = Constants.Settings.margin
         
-        self.fanValueState = FanValue(rawValue: Store.shared.string(key: "Sensors_popup_fanValue", defaultValue: self.fanValueState.rawValue)) ?? .percentage
+        self.settingsView.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Keyboard shortcut"), component: KeyboardShartcutView(
+                callback: self.setKeyboardShortcut,
+                value: self.keyboardShortcut
+            ))
+        ]))
+        
+        self.settingsView.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Fan value"), component: selectView(
+                action: #selector(self.toggleFanValue),
+                items: FanValues,
+                selected: self.fanValueState.rawValue
+            ))
+        ]))
     }
     
     required init?(coder: NSCoder) {
@@ -78,22 +79,17 @@ internal class Popup: PopupWrapper {
     
     internal func setup(_ values: [Sensor_p]? = nil, reload: Bool = false) {
         guard let values = reload ? self.sensors : values else { return }
-        let fans = values.filter({ $0.type == .fan && !$0.isComputed })
-        var sensors = values.filter({ $0.type != .fan })
+        let fans = values.filter({ $0.type == .fan && $0.popupState })
+        var sensors = values
         if !self.unknownSensorsState {
             sensors = sensors.filter({ $0.group != .unknown })
         }
         
         self.subviews.forEach({ $0.removeFromSuperview() })
         if !reload {
-            self.settingsView.subviews.forEach({ $0.removeFromSuperview() })
-            
-            self.settingsView.addArrangedSubview(selectSettingsRow(
-                title: localizedString("Fan value"),
-                action: #selector(self.toggleFanValue),
-                items: FanValues,
-                selected: self.fanValueState.rawValue
-            ))
+            self.settingsView.subviews.filter({ $0.identifier == NSUserInterfaceItemIdentifier("sensor") }).forEach { v in
+                v.removeFromSuperview()
+            }
         }
         
         if !fans.isEmpty {
@@ -101,19 +97,25 @@ internal class Popup: PopupWrapper {
             
             let container = NSStackView()
             container.orientation = .vertical
-            container.spacing = Constants.Popup.margins
+            container.spacing = Constants.Popup.spacing
             
             fans.forEach { (f: Sensor_p) in
                 if let fan = f as? Fan {
-                    let view = FanView(fan, width: self.frame.width) { [weak self] in
-                        let h = container.arrangedSubviews.map({ $0.bounds.height + container.spacing }).reduce(0, +) - container.spacing
-                        if container.frame.size.height != h && h >= 0 {
-                            container.setFrameSize(NSSize(width: container.frame.width, height: h))
+                    if f.isComputed {
+                        let sensor = SensorView(fan, width: self.frame.width, toggleable: false) {}
+                        self.list[fan.key] = sensor
+                        container.addArrangedSubview(sensor)
+                    } else {
+                        let view = FanView(fan, width: self.frame.width) { [weak self] in
+                            let h = container.arrangedSubviews.map({ $0.bounds.height + container.spacing }).reduce(0, +) - container.spacing
+                            if container.frame.size.height != h && h >= 0 {
+                                container.setFrameSize(NSSize(width: container.frame.width, height: h))
+                            }
+                            self?.recalculateHeight()
                         }
-                        self?.recalculateHeight()
+                        self.list[fan.key] = view
+                        container.addArrangedSubview(view)
                     }
-                    self.list[fan.key] = view
-                    container.addArrangedSubview(view)
                 }
             }
             
@@ -130,7 +132,7 @@ internal class Popup: PopupWrapper {
                 types.append(s.type)
             }
         }
-
+        
         types.forEach { (typ: SensorType) in
             var filtered = sensors.filter{ $0.type == typ }
             var groups: [SensorGroup] = []
@@ -139,46 +141,31 @@ internal class Popup: PopupWrapper {
                     groups.append(s.group)
                 }
             }
-
+            
             if !reload {
-                let header = NSStackView()
-                header.heightAnchor.constraint(equalToConstant: Constants.Settings.row).isActive = true
-                header.spacing = 0
-
-                let titleField: NSTextField = LabelField(frame: NSRect(x: 0, y: 0, width: 0, height: 0), localizedString(typ.rawValue))
-                titleField.font = NSFont.systemFont(ofSize: 13, weight: .medium)
-                titleField.textColor = .labelColor
-
-                header.addArrangedSubview(titleField)
-                header.addArrangedSubview(NSView())
-
-                self.settingsView.addArrangedSubview(header)
-
-                let container = NSStackView()
-                container.orientation = .vertical
-                container.edgeInsets = NSEdgeInsets(top: 0, left: Constants.Settings.margin, bottom: 0, right: Constants.Settings.margin)
-                container.spacing = 0
-
+                let section = PreferencesSection(label: localizedString(typ.rawValue))
+                section.identifier = NSUserInterfaceItemIdentifier("sensor")
                 groups.forEach { (group: SensorGroup) in
                     filtered.filter{ $0.group == group }.forEach { (s: Sensor_p) in
-                        let row: NSView = toggleSettingRow(title: s.name, action: #selector(self.toggleSensor), state: s.popupState)
-                        row.subviews.filter{ $0 is NSControl }.forEach { (control: NSView) in
-                            control.identifier = NSUserInterfaceItemIdentifier(rawValue: s.key)
-                        }
-                        container.addArrangedSubview(row)
+                        let btn = switchView(
+                            action: #selector(self.toggleSensor),
+                            state: s.popupState
+                        )
+                        btn.identifier = NSUserInterfaceItemIdentifier(rawValue: s.key)
+                        section.add(PreferencesRow(localizedString(s.name), component: btn))
                     }
                 }
-
-                self.settingsView.addArrangedSubview(container)
+                self.settingsView.addArrangedSubview(section)
             }
-
+            
+            if typ == .fan { return }
             filtered = filtered.filter{ $0.popupState }
             if filtered.isEmpty { return }
-
+            
             self.addArrangedSubview(separatorView(localizedString(typ.rawValue), width: self.frame.width))
             groups.forEach { (group: SensorGroup) in
                 filtered.filter{ $0.group == group }.forEach { (s: Sensor_p) in
-                    let sensor = SensorView(s, width: self.frame.width)  { [weak self] in
+                    let sensor = SensorView(s, width: self.frame.width) { [weak self] in
                         self?.recalculateHeight()
                     }
                     self.addArrangedSubview(sensor)
@@ -300,7 +287,11 @@ internal class SensorView: NSStackView {
     
     private var openned: Bool = false
     
-    public init(_ sensor: Sensor_p, width: CGFloat, callback: @escaping (() -> Void)) {
+    private var fanValueState: FanValue {
+        FanValue(rawValue: Store.shared.string(key: "Sensors_popup_fanValue", defaultValue: FanValue.percentage.rawValue)) ?? .percentage
+    }
+    
+    public init(_ sensor: Sensor_p, width: CGFloat, toggleable: Bool = true, callback: @escaping (() -> Void)) {
         self.sizeCallback = callback
         
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: 22))
@@ -309,7 +300,7 @@ internal class SensorView: NSStackView {
         self.distribution = .fillProportionally
         self.spacing = 0
         
-        self.valueView = ValueSensorView(sensor, width: width, callback: { [weak self] in
+        self.valueView = ValueSensorView(sensor, width: width, toggleable: toggleable, callback: { [weak self] in
             self?.open()
         })
         self.chartView = ChartSensorView(width: width, suffix: sensor.unit)
@@ -326,11 +317,15 @@ internal class SensorView: NSStackView {
     }
     
     public func update(_ sensor: Sensor_p) {
-        self.valueView.update(sensor.formattedPopupValue)
+        var value = sensor.formattedPopupValue
+        if let fan = sensor as? Fan {
+            value = self.fanValueState == .percentage ? "\(fan.percentage)%" : fan.formattedValue
+        }
+        self.valueView.update(value)
     }
     
     public func addHistoryPoint(_ sensor: Sensor_p) {
-        self.chartView.update(sensor.value)
+        self.chartView.update(sensor.localValue, sensor.unit)
     }
     
     private func open() {
@@ -351,14 +346,17 @@ internal class ValueSensorView: NSStackView {
     public var callback: (() -> Void)
     
     private var labelView: LabelField = {
-        let view = LabelField(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+        let view = LabelField(frame: NSRect.zero)
         view.cell?.truncatesLastVisibleLine = true
         return view
     }()
-    private var valueView: ValueField = ValueField(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+    private var valueView: ValueField = ValueField(frame: NSRect.zero)
     
-    public init(_ sensor: Sensor_p, width: CGFloat, callback: @escaping (() -> Void)) {
+    private let isToggleable: Bool
+    
+    public init(_ sensor: Sensor_p, width: CGFloat, toggleable: Bool = true, callback: @escaping (() -> Void)) {
         self.callback = callback
+        self.isToggleable = toggleable
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: 22))
         
         self.wantsLayer = true
@@ -374,12 +372,14 @@ internal class ValueSensorView: NSStackView {
         self.addArrangedSubview(self.labelView)
         self.addArrangedSubview(self.valueView)
         
-        self.addTrackingArea(NSTrackingArea(
-            rect: NSRect(x: 0, y: 0, width: self.frame.width, height: 22),
-            options: [NSTrackingArea.Options.activeAlways, NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeInActiveApp],
-            owner: self,
-            userInfo: nil
-        ))
+        if self.isToggleable {
+            self.addTrackingArea(NSTrackingArea(
+                rect: NSRect(x: 0, y: 0, width: self.frame.width, height: 22),
+                options: [NSTrackingArea.Options.activeAlways, NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeInActiveApp],
+                owner: self,
+                userInfo: nil
+            ))
+        }
         
         NSLayoutConstraint.activate([
             self.labelView.heightAnchor.constraint(equalToConstant: 16),
@@ -397,14 +397,17 @@ internal class ValueSensorView: NSStackView {
     }
     
     override func mouseDown(with theEvent: NSEvent) {
+        guard self.isToggleable else { return }
         self.callback()
     }
     
     public override func mouseEntered(with: NSEvent) {
+        guard self.isToggleable else { return }
         self.layer?.backgroundColor = .init(gray: 0.01, alpha: 0.05)
     }
     
     public override func mouseExited(with: NSEvent) {
+        guard self.isToggleable else { return }
         self.layer?.backgroundColor = .none
     }
 }
@@ -439,7 +442,10 @@ internal class ChartSensorView: NSStackView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func update(_ value: Double) {
+    public func update(_ value: Double, _ suffix: String) {
+        if self.chart?.suffix != suffix {
+            self.chart?.suffix = suffix
+        }
         self.chart?.addValue(value/100)
     }
 }
@@ -576,8 +582,8 @@ internal class FanView: NSStackView {
         bar.heightAnchor.constraint(equalToConstant: bar.bounds.height).isActive = true
         bar.wantsLayer = true
         bar.layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
-        bar.layer?.borderColor = NSColor.secondaryLabelColor.cgColor
-        bar.layer?.borderWidth = 0.25
+        bar.layer?.borderColor = NSColor.quaternaryLabelColor.cgColor
+        bar.layer?.borderWidth = 1
         bar.layer?.cornerRadius = 2
         
         let width: CGFloat = (bar.frame.width * CGFloat(self.fan.percentage < 0 ? 0 : self.fan.percentage)) / 100

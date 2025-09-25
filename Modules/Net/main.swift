@@ -12,6 +12,7 @@
 import Cocoa
 import Kit
 import SystemConfiguration
+import WidgetKit
 
 public enum Network_t: String, Codable {
     case wifi
@@ -29,6 +30,7 @@ public struct Network_interface: Codable {
 public struct Network_addr: Codable {
     var v4: String? = nil
     var v6: String? = nil
+    var countryCode: String? = nil
 }
 
 public struct Network_wifi: Codable {
@@ -66,11 +68,11 @@ public struct Bandwidth: Codable {
     var download: Int64 = 0
 }
 
-public struct Network_Usage: value_t, Codable {
+public struct Network_Usage: Codable, RemoteType {
     var bandwidth: Bandwidth = Bandwidth()
     var total: Bandwidth = Bandwidth()
     
-    var laddr: String? = nil // local ip
+    var laddr: Network_addr = Network_addr() // local ip
     var raddr: Network_addr = Network_addr() // remote ip
     
     var interface: Network_interface? = nil
@@ -82,7 +84,7 @@ public struct Network_Usage: value_t, Codable {
     mutating func reset() {
         self.bandwidth = Bandwidth()
         
-        self.laddr = nil
+        self.laddr = Network_addr()
         self.raddr = Network_addr()
         
         self.interface = nil
@@ -91,26 +93,39 @@ public struct Network_Usage: value_t, Codable {
         self.wifiDetails.reset()
     }
     
-    public var widgetValue: Double = 0
+    public func remote() -> Data? {
+        let addr = "\(self.laddr.v4 ?? ""),\(self.laddr.v6 ?? ""),\(self.raddr.v4 ?? ""),\(self.raddr.v6 ?? "")"
+        let string = "1,\(self.interface?.BSDName ?? ""),1,\(self.bandwidth.download),\(self.bandwidth.upload),\(addr)$"
+        return string.data(using: .utf8)
+    }
 }
 
 public struct Network_Connectivity: Codable {
     var status: Bool = false
+    var latency: Double = 0
 }
 
-public struct Network_Process: Codable {
-    var time: Date = Date()
-    var name: String = ""
-    var pid: String = ""
-    var download: Int = 0
-    var upload: Int = 0
-    var icon: NSImage {
+public struct Network_Process: Codable, Process_p {
+    public var pid: Int
+    public var name: String
+    public var time: Date
+    public var download: Int
+    public var upload: Int
+    public var icon: NSImage {
         get {
-            if let pid = pid_t(self.pid), let app = NSRunningApplication(processIdentifier: pid) {
-                return app.icon ?? Constants.defaultProcessIcon
+            if let app = NSRunningApplication(processIdentifier: pid_t(self.pid)), let icon = app.icon {
+                return icon
             }
             return Constants.defaultProcessIcon
         }
+    }
+    
+    public init(pid: Int = 0, name: String = "", time: Date = Date(), download: Int = 0, upload: Int = 0) {
+        self.pid = pid
+        self.name = name
+        self.time = time
+        self.download = download
+        self.upload = upload
     }
 }
 
@@ -118,6 +133,7 @@ public class Network: Module {
     private let popupView: Popup
     private let settingsView: Settings
     private let portalView: Portal
+    private let notificationsView: Notifications
     
     private var usageReader: UsageReader? = nil
     private var processReader: ProcessReader? = nil
@@ -126,51 +142,54 @@ public class Network: Module {
     private let ipUpdater = NSBackgroundActivityScheduler(identifier: "eu.exelban.Stats.Network.IP")
     private let usageReseter = NSBackgroundActivityScheduler(identifier: "eu.exelban.Stats.Network.Usage")
     
+    private var widgetActivationThresholdState: Bool {
+        Store.shared.bool(key: "\(self.config.name)_widgetActivationThresholdState", defaultValue: false)
+    }
     private var widgetActivationThreshold: Int {
-        Store.shared.int(key: "\(self.config.name)_widgetActivationThreshold", defaultValue: 0) * 1_024
+        Store.shared.int(key: "\(self.config.name)_widgetActivationThreshold", defaultValue: 0)
+    }
+    private var widgetActivationThresholdSize: SizeUnit {
+        SizeUnit.fromString(Store.shared.string(key: "\(self.name)_widgetActivationThresholdSize", defaultValue: SizeUnit.MB.key))
     }
     private var publicIPRefreshInterval: String {
         Store.shared.string(key: "\(self.name)_publicIPRefreshInterval", defaultValue: "never")
     }
+    private var textValue: String {
+        Store.shared.string(key: "\(self.name)_textWidgetValue", defaultValue: "$addr.public - $status")
+    }
     
     public init() {
-        self.settingsView = Settings("Network")
-        self.popupView = Popup("Network")
-        self.portalView = Portal("Network")
+        self.settingsView = Settings(.network)
+        self.popupView = Popup(.network)
+        self.portalView = Portal(.network)
+        self.notificationsView = Notifications(.network)
         
         super.init(
+            moduleType: .network,
             popup: self.popupView,
             settings: self.settingsView,
-            portal: self.portalView
+            portal: self.portalView,
+            notifications: self.notificationsView
         )
         guard self.available else { return }
         
-        self.usageReader = UsageReader(.network)
-        self.processReader = ProcessReader(.network)
-        self.connectivityReader = ConnectivityReader(.network)
+        self.usageReader = UsageReader(.network) { [weak self] value in
+            self?.usageCallback(value)
+        }
+        self.processReader = ProcessReader(.network) { [weak self] value in
+            if let list = value {
+                self?.popupView.processCallback(list)
+            }
+        }
+        self.connectivityReader = ConnectivityReader(.network) { [weak self] value in
+            self?.connectivityCallback(value)
+        }
         
         self.settingsView.callbackWhenUpdateNumberOfProcesses = {
             self.popupView.numberOfProcessesUpdated()
             DispatchQueue.global(qos: .background).async {
                 self.processReader?.read()
             }
-        }
-        
-        self.usageReader?.callbackHandler = { [weak self] value in
-            self?.usageCallback(value)
-        }
-        self.usageReader?.readyCallback = { [weak self] in
-            self?.readyHandler()
-        }
-        
-        self.processReader?.callbackHandler = { [weak self] value in
-            if let list = value {
-                self?.popupView.processCallback(list)
-            }
-        }
-        
-        self.connectivityReader?.callbackHandler = { [weak self] value in
-            self?.connectivityCallback(value)
         }
         
         self.settingsView.callback = { [weak self] in
@@ -186,19 +205,14 @@ public class Network: Module {
                 self?.connectivityCallback(Network_Connectivity(status: false))
             }
         }
+        self.settingsView.setInterval = { [weak self] value in
+            self?.connectivityReader?.setInterval(value)
+        }
         self.settingsView.publicIPRefreshIntervalCallback = { [weak self] in
             self?.setIPUpdater()
         }
         
-        if let reader = self.usageReader {
-            self.addReader(reader)
-        }
-        if let reader = self.processReader {
-            self.addReader(reader)
-        }
-        if let reader = self.connectivityReader {
-            self.addReader(reader)
-        }
+        self.setReaders([self.usageReader, self.processReader, self.connectivityReader])
         
         self.setIPUpdater()
         self.setUsageReset()
@@ -219,29 +233,112 @@ public class Network: Module {
         
         self.popupView.usageCallback(value)
         self.portalView.usageCallback(value)
+        self.notificationsView.usageCallback(value)
         
-        var upload: Int64 = 0
-        var download: Int64 = 0
-        if value.bandwidth.upload >= self.widgetActivationThreshold || value.bandwidth.download >= self.widgetActivationThreshold {
-            upload = value.bandwidth.upload
-            download = value.bandwidth.download
+        var upload: Int64 = value.bandwidth.upload
+        var download: Int64 = value.bandwidth.download
+        if self.widgetActivationThresholdState {
+            upload = 0
+            download = 0
+            let threshold = self.widgetActivationThresholdSize.toBytes(self.widgetActivationThreshold)
+            if value.bandwidth.upload >= threshold || value.bandwidth.download >= threshold {
+                upload = value.bandwidth.upload
+                download = value.bandwidth.download
+            }
         }
         
-        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: Widget) in
+        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: SWidget) in
             switch w.item {
-            case let widget as SpeedWidget: widget.setValue(upload: upload, download: download)
+            case let widget as SpeedWidget: widget.setValue(input: download, output: upload)
             case let widget as NetworkChart: widget.setValue(upload: Double(upload), download: Double(download))
+            case let widget as TextWidget:
+                var text = self.textValue
+                let pairs = TextWidget.parseText(text)
+                pairs.forEach { pair in
+                    var replacement: String? = nil
+                    
+                    switch pair.key {
+                    case "$addr":
+                        switch pair.value {
+                        case "public": replacement = value.raddr.v4 ?? value.raddr.v6 ?? "-"
+                        case "publicV4": replacement = value.raddr.v4 ?? "-"
+                        case "publicV6": replacement = value.raddr.v6 ?? "-"
+                        case "private": replacement = value.laddr.v4 ?? value.laddr.v6 ?? "-"
+                        case "privateV4": replacement = value.laddr.v4 ?? "-"
+                        case "privateV6": replacement = value.laddr.v6 ?? "-"
+                        default: return
+                        }
+                    case "$interface":
+                        switch pair.value {
+                        case "displayName": replacement = value.interface?.displayName ?? "-"
+                        case "BSDName": replacement = value.interface?.BSDName ?? "-"
+                        case "address": replacement = value.interface?.address ?? "-"
+                        default: return
+                        }
+                    case "$wifi":
+                        switch pair.value {
+                        case "ssid": replacement = value.wifiDetails.ssid ?? "-"
+                        case "bssid": replacement = value.wifiDetails.bssid ?? "-"
+                        case "RSSI": replacement = "\(value.wifiDetails.RSSI ?? 0)"
+                        case "noise": replacement = "\(value.wifiDetails.noise ?? 0)"
+                        case "transmitRate": replacement = "\(value.wifiDetails.transmitRate ?? 0)"
+                        case "standard": replacement = value.wifiDetails.standard ?? "-"
+                        case "mode": replacement = value.wifiDetails.mode ?? "-"
+                        case "security": replacement = value.wifiDetails.security ?? "-"
+                        case "channel": replacement = value.wifiDetails.channel ?? "-"
+                        case "channelBand": replacement = value.wifiDetails.channelBand ?? "-"
+                        case "channelWidth": replacement = value.wifiDetails.channelWidth ?? "-"
+                        case "channelNumber": replacement = value.wifiDetails.channelNumber ?? "-"
+                        default: return
+                        }
+                    case "$status":
+                        replacement = localizedString(value.status ? "UP" : "DOWN")
+                    case "$upload":
+                        switch pair.value {
+                        case "total": replacement = Units(bytes: value.total.upload).getReadableMemory()
+                        default: replacement = Units(bytes: value.bandwidth.upload).getReadableMemory()
+                        }
+                    case "$download":
+                        switch pair.value {
+                        case "total": replacement = Units(bytes: value.total.download).getReadableMemory()
+                        default: replacement = Units(bytes: value.bandwidth.download).getReadableMemory()
+                        }
+                    case "$type":
+                        replacement = value.connectionType?.rawValue ?? "-"
+                    case "$icmp":
+                        guard let connectivity = self.connectivityReader?.value else { return }
+                        switch pair.value {
+                        case "status": replacement = localizedString(connectivity.status ? "UP" : "DOWN")
+                        case "latency": replacement = "\(Int(connectivity.latency)) ms"
+                        default: return
+                        }
+                    default: return
+                    }
+                    
+                    if let replacement {
+                        let key = pair.value.isEmpty ? pair.key : "\(pair.key).\(pair.value)"
+                        text = text.replacingOccurrences(of: key, with: replacement)
+                    }
+                }
+                widget.setValue(text)
             default: break
             }
+        }
+        
+        if #available(macOS 11.0, *) {
+            guard let blobData = try? JSONEncoder().encode(raw) else { return }
+            self.userDefaults?.set(blobData, forKey: "Network@UsageReader")
+            WidgetCenter.shared.reloadTimelines(ofKind: Network_entry.kind)
         }
     }
     
     private func connectivityCallback(_ raw: Network_Connectivity?) {
         guard let value = raw, self.enabled else { return }
         
-        self.popupView.connectivityCallback(value.status)
+        self.popupView.connectivityCallback(value)
+        self.notificationsView.connectivityCallback(value)
         
-        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: Widget) in
+        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: SWidget) in
             switch w.item {
             case let widget as StateWidget: widget.setValue(value.status)
             default: break
@@ -264,9 +361,7 @@ public class Network: Module {
         
         self.ipUpdater.repeats = true
         self.ipUpdater.schedule { (completion: @escaping NSBackgroundActivityScheduler.CompletionHandler) in
-            guard self.enabled && self.isAvailable() else {
-                return
-            }
+            guard self.enabled && self.isAvailable() else { return }
             debug("going to automatically refresh IP address...")
             NotificationCenter.default.post(name: .refreshPublicIP, object: nil, userInfo: nil)
             completion(NSBackgroundActivityScheduler.Result.finished)
@@ -276,11 +371,12 @@ public class Network: Module {
     private func setUsageReset() {
         self.usageReseter.invalidate()
         
-        switch AppUpdateInterval(rawValue: Store.shared.string(key: "\(self.config.name)_usageReset", defaultValue: AppUpdateInterval.atStart.rawValue)) {
+        switch AppUpdateInterval(rawValue: Store.shared.string(key: "\(self.config.name)_usageReset", defaultValue: AppUpdateInterval.never.rawValue)) {
         case .oncePerDay: self.usageReseter.interval = 60 * 60 * 24
         case .oncePerWeek: self.usageReseter.interval = 60 * 60 * 24 * 7
         case .oncePerMonth: self.usageReseter.interval = 60 * 60 * 24 * 30
-        case .never, .atStart: return
+        case .atStart: NotificationCenter.default.post(name: .resetTotalNetworkUsage, object: nil, userInfo: nil)
+        case .never: return
         default: return
         }
         

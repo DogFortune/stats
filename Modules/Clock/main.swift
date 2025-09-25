@@ -30,11 +30,19 @@ public struct Clock_t: Codable {
             Store.shared.set(key: "clock_\(self.id)_popupIndex", value: newValue)
         }
     }
+    var popupState: Bool {
+        get {
+            Store.shared.bool(key: "clock_\(self.id)_popupState", defaultValue: true)
+        }
+        set {
+            Store.shared.set(key: "clock_\(self.id)_popupState", value: newValue)
+        }
+    }
     
     public func formatted() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = self.format
-        formatter.timeZone = TimeZone(fromUTC: self.tz)
+        formatter.timeZone = TimeZone(from: self.tz)
         return formatter.string(from: self.value ?? Date())
     }
 }
@@ -46,13 +54,14 @@ internal class ClockReader: Reader<Date> {
 }
 
 public class Clock: Module {
-    private let popupView: Popup = Popup()
-    private let settingsView: Settings = Settings()
+    private let popupView: Popup = Popup(.clock)
+    private let portalView: Portal
+    private let settingsView: Settings = Settings(.clock)
     
-    private var reader: ClockReader = ClockReader(.clock)
+    private var reader: ClockReader?
     
-    private var list: [Clock_t] {
-        if let objects = Store.shared.data(key: "\(Clock.title)_list") {
+    static var list: [Clock_t] {
+        if let objects = Store.shared.data(key: "\(ModuleType.clock.stringValue)_list") {
             let decoder = JSONDecoder()
             if let objectsDecoded = try? decoder.decode(Array.self, from: objects) as [Clock_t] {
                 return objectsDecoded
@@ -62,25 +71,27 @@ public class Clock: Module {
     }
     
     public init() {
+        self.portalView = Portal(.clock, list: Clock.list)
+        
         super.init(
+            moduleType: .clock,
             popup: self.popupView,
-            settings: self.settingsView
+            settings: self.settingsView,
+            portal: self.portalView
         )
         guard self.available else { return }
         
-        self.reader.callbackHandler = { [weak self] value in
-            guard let value else { return }
+        self.reader = ClockReader(.clock) { [weak self] value in
             self?.callback(value)
         }
         
-        self.addReader(self.reader)
-        self.reader.readyCallback = { [weak self] in
-            self?.readyHandler()
-        }
+        self.setReaders([self.reader])
     }
     
-    private func callback(_ value: Date) {
-        var clocks: [Clock_t] = self.list
+    private func callback(_ value: Date?) {
+        guard let value else { return }
+        
+        var clocks: [Clock_t] = Clock.list
         var widgetList: [Stack_t] = []
         
         for (i, c) in clocks.enumerated() {
@@ -92,9 +103,10 @@ public class Clock: Module {
         
         DispatchQueue.main.async(execute: {
             self.popupView.callback(clocks)
+            self.portalView.callback(clocks)
         })
         
-        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: Widget) in
+        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: SWidget) in
             switch w.item {
             case let widget as StackWidget: widget.setValues(widgetList)
             default: break
@@ -104,7 +116,6 @@ public class Clock: Module {
 }
 
 extension Clock {
-    static let title: String = "Clock"
     static let localID: String = UUID().uuidString
     static var local: Clock_t {
         Clock_t(id: Clock.localID, name: localizedString("Local time"), format: "yyyy-MM-dd HH:mm:ss", tz: "local")
@@ -144,10 +155,12 @@ extension Clock {
             KeyValue_t(key: "9", value: "UTC+9:00"),
             KeyValue_t(key: "9:30", value: "UTC+9:30"),
             KeyValue_t(key: "10", value: "UTC+10:00"),
+            KeyValue_t(key: "10:30", value: "UTC+10:30"),
             KeyValue_t(key: "11", value: "UTC+11:00"),
             KeyValue_t(key: "12", value: "UTC+12:00"),
             KeyValue_t(key: "13", value: "UTC+13:00"),
-            KeyValue_t(key: "14", value: "UTC+14:00")
-        ]
+            KeyValue_t(key: "14", value: "UTC+14:00"),
+            KeyValue_t(key: "separator", value: "separator")
+        ] + TimeZone.knownTimeZoneIdentifiers.map { KeyValue_t(key: $0, value: $0) }
     }
 }

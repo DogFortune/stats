@@ -69,11 +69,37 @@
 "Square" = "Квадратне";
 "Cube" = "Кубічне";
 "Logarithmic" = "Логарифмічне";
+"Fixed scale" = "Фіксована";
 "Cores" = "Ядра";
 "Settings" = "Налаштування";
 "Name" = "Назва";
 "Format" = "Формат";
 "Turn off" = "Вимкнути";
+"Normal" = "Нормальний";
+"Warning" = "Попереджнння";
+"Critical" = "Критичний";
+"Usage" = "Використання";
+"2 minutes" = "2 хвилини";
+"3 minutes" = "3 хвилини";
+"10 minutes" = "10 хвилин";
+"Import" = "Імпорт";
+"Export" = "Експорт";
+"Separator" = "Роздільник";
+"Read" = "Зчитування";
+"Write" = "Запис";
+"Frequency" = "Частота";
+"Save" = "Зберегти";
+"Run" = "Запустити";
+"Stop" = "Зупинити";
+"Uninstall" = "Видалити";
+"1 sec" = "1 сек";
+"2 sec" = "2 сек";
+"3 sec" = "3 сек";
+"5 sec" = "5 сек";
+"10 sec" = "10 сек";
+"15 sec" = "15 сек";
+"30 sec" = "30 сек";
+"60 sec" = "60 сек";
 
 // Setup
 "Stats Setup" = "Налаштування";
@@ -105,6 +131,7 @@
 "Successfully updated" = "Успішно оновленно";
 "Stats was updated to v" = "Stats оновлено до v%0";
 "Reset settings text" = "Усі налаштування програми буде скинуто, і програма буде перезапущена. Ви впевнені, що хочете це зробити?";
+"Support text" = "Дякуємо за використання Stats!\n\n Підтримка і вдосконалення цього проекту з відкритим вихідним кодом вимагає часу і ресурсів. Ваша підтримка допомагає нам продовжувати надавати безкоштовну і надійну програму для всіх.\n\nЯкщо ви вважаєте Stats корисною, будь ласка, зробіть свій внесок. Кожна копійка допомагає!";
 
 // Settings
 "Open Activity Monitor" = "Відкрити Монітор активності";
@@ -113,6 +140,9 @@
 "Close application" = "Закрити програму";
 "Open application settings" = "Відкрити налаштування";
 "Open dashboard" = "Відкрити dashboard";
+"No notifications available in this module" = "У цьому модулі немає повідомлень";
+"Open Calendar" = "Відкрити календар";
+"Toggle the module" = "Перемкніть модуль";
 
 // Application settings
 "Update application" = "Оновити програму";
@@ -126,20 +156,28 @@
 "Show icon in dock" = "Показувати іконку в dock";
 "Start at login" = "Запускати при логуванні";
 "Build number" = "Номер збірки";
-"Reset settings" = "Скинути налаштування";
+"Import settings" = "Імпорт налаштувань";
+"Export settings" = "Експорт налаштувань";
+"Reset settings" = "Скидання налаштувань";
 "Pause the Stats" = "Призупинити Stats";
 "Resume the Stats" = "Відновити Stats";
 "Combined modules" = "Комбіновані модулі";
+"Combined details" = "Комбіновані деталі";
 "Spacing" = "Інтервал";
 "Share anonymous telemetry" = "Ділитись анонімною телеметрією";
+"Choose file" = "Виберіть файл";
+"Stress tests" = "Стрес-тести";
 
 // Dashboard
 "Serial number" = "Серійний номер";
+"Model identifier" = "Ідентифікатор моделі";
+"Production year" = "Рік випуску";
 "Uptime" = "Час роботи";
 "Number of cores" = "%0 ядер";
 "Number of threads" = "%0 потоків";
 "Number of e-cores" = "%0 енергоефективних ядер";
 "Number of p-cores" = "%0 високопродуктивних ядер";
+"Disks" = "Диски";
 
 // Update
 "The latest version of Stats installed" = "Встановлено останню версію";
@@ -173,6 +211,8 @@
 "Static width" = "Статична ширина";
 "Tachometer widget" = "Тахометр";
 "State widget" = "Стан";
+"Text widget" = "Текст";
+"Battery details widget" = "Віджет даних про акумулятор";
 "Show symbols" = "Показати символи";
 "Label widget" = "Етикетка";
 "Number of reads in the chart" = "Кількість зчитувань на діаграмі";
@@ -180,6 +220,10 @@
 "Color of upload" = "Колір висилання";
 "Monospaced font" = "Моноширинний шрифт";
 "Reverse order" = "Зворотній порядок";
+"Chart history" = "Тривалість діаграми";
+"Default color" = "За замовчуванням";
+"Transparent when no activity" = "Прозорий коли немає активності";
+"Constant color" = "Постійний";
 
 // Module Kit
 "Open module settings" = "Відкрити налаштування модуля";
@@ -197,12 +241,19 @@
 "Merge widgets" = "Об’єднайти віджети";
 "No available widgets to configure" = "Немає доступних віджетів для налаштування";
 "No options to configure for the popup in this module" = "У цьому модулі немає параметрів для налаштування спливаючого вікна";
+"Process" = "Процес";
+"Kill process" = "Завершити процес";
+"Keyboard shortcut" = "Комбінація клавіш";
+"Listening..." = "Слухаю...";
 
 // Modules
 "Number of top processes" = "Кількість процесів";
 "Update interval for top processes" = "Інтервал оновлення для процесів";
 "Notification level" = "Рівень сповіщення";
 "Chart color" = "Колір діаграми";
+"Main chart scaling" = "Масштабування основної діаграми";
+"Scale value" = "Значення масштабування";
+"Text widget value" = "Значення текстового віджета";
 
 // CPU
 "CPU usage" = "Використання процесора";
@@ -230,6 +281,12 @@
 "Cluster grouping" = "Кластерне групування";
 "Efficiency cores color" = "Колір енергоефективних ядер";
 "Performance cores color" = "Колір високопродуктивних ядер";
+"Total load" = "Загальне використання";
+"System load" = "Використання системи";
+"User load" = "Використання користувача";
+"Efficiency cores load" = "Використання енергоефективних ядер";
+"Performance cores load" = "Використання високопродуктивних ядер";
+"All cores" = "Всі ядра";
 
 // GPU
 "GPU to show" = "Активний графічний процесор";
@@ -269,6 +326,9 @@
 "Wired color" = "Колір постійної пам’яті";
 "Compressed color" = "Колір стисненої пам’яті";
 "Free color" = "Колір вільної пам’яті";
+"Free memory (less than)" = "Вільна пам'ять (менше ніж)";
+"Swap size" = "Розмір swap";
+"Free RAM is" = "Вільна оперативна пам'ять %0";
 
 // Disk
 "Show removable disks" = "Показати зйомні диски";
@@ -282,6 +342,12 @@
 "Read color" = "Колір зчитування";
 "Write color" = "Колір запису";
 "Disk usage" = "Використання диска";
+"Total read" = "Всього прочитано";
+"Total written" = "Всього записано";
+"Write speed" = "Запис";
+"Read speed" = "Зчитування";
+"Drives" = "Диски";
+"SMART data" = "SMART дані";
 
 // Sensors
 "Temperature unit" = "Одиниця виміру температури";
@@ -299,6 +365,11 @@
 "Fan value" = "Значення вентилятора";
 "Turn off fan" = "Вимкнути вентилятор";
 "You are going to turn off the fan. This is not recommended action that can damage your mac, are you sure you want to do that?" = "Ви збираєтеся вимкнути вентилятор. Це не рекомендована дія, яка може зламати ваш Mac. Ви впевнені, що хочете це зробити?";
+"Sensor threshold" = "Поріг датчика";
+"Left fan" = "Лівий";
+"Right fan" = "Правий";
+"Fastest fan" = "Найшвидший";
+"Sensor to show" = "Активний датчик";
 
 // Network
 "Uploading" = "Висилання";
@@ -332,7 +403,6 @@
 "Nonactive state color" = "Колір неактивного стану";
 "Connectivity host (ICMP)" = "Хост підключення (ICMP)";
 "Leave empty to disable the check" = "Залиште пустим, щоб вимкнути перевірку";
-"Transparent pictogram when no activity" = "Прозора піктограма, коли немає активності";
 "Connectivity history" = "Історія підключення";
 "Auto-refresh public IP address" = "Автоматичне оновлення IP-адреси";
 "Every hour" = "Щогодини";
@@ -340,6 +410,11 @@
 "Every 24 hours" = "Кожні 24 години";
 "Network activity" = "Мережева активність";
 "Last reset" = "Останнє скидання %0 тому";
+"Latency" = "Затримка";
+"Upload speed" = "Висилання";
+"Download speed" = "Завантаження";
+"Address" = "Адреса";
+"WiFi network" = "Мережа WiFi";
 
 // Battery
 "Level" = "Рівень заряду";
@@ -377,6 +452,9 @@
 "Low power mode" = "Режим низької потужності";
 "Percentage inside the icon" = "Відсоток всередині віджету";
 "Colorize battery" = "Розфарбувати акумулятор";
+"Charging current" = "Струм зарядки";
+"Charging Voltage" = "Напруга зарядки";
+"Charger state inside the battery" = "Стан зарядки всередині акумулятора";
 
 // Bluetooth
 "Battery to show" = "Активна батарея";
@@ -385,6 +463,11 @@
 // Clock
 "Time zone" = "Часовий пояс";
 "Local" = "Місцевий";
+"Calendar" = "Календар";
+"Local time" = "Місцевий час";
+"Add new clock" = "Додати новий годинник";
+"Delete selected clock" = "Видалити вибраний годинник";
+"Help with datetime format" = "Довідка з форматом дати й часу";
 
 // Colors
 "Based on utilization" = "На основі використання";

@@ -11,8 +11,9 @@
 
 import Cocoa
 import Kit
+import WidgetKit
 
-public struct RAM_Usage: value_t, Codable {
+public struct RAM_Usage: Codable, RemoteType {
     var total: Double
     var used: Double
     var free: Double
@@ -24,25 +25,20 @@ public struct RAM_Usage: value_t, Codable {
     
     var app: Double
     var cache: Double
-    var pressure: Double
     
-    var rawPressureLevel: UInt
     var swap: Swap
+    var pressure: Pressure
     
-    public var widgetValue: Double {
-        get {
-            return self.usage
-        }
-    }
+    var swapins: Int64
+    var swapouts: Int64
     
     public var usage: Double {
-        get {
-            return Double((self.total - self.free) / self.total)
-        }
+        get { Double((self.total - self.free) / self.total) }
     }
     
-    public var pressureLevel: DispatchSource.MemoryPressureEvent {
-        DispatchSource.MemoryPressureEvent(rawValue: self.rawPressureLevel)
+    public func remote() -> Data? {
+        let string = "\(self.total),\(self.used),\(self.pressure.level),\(self.swap.used)$"
+        return string.data(using: .utf8)
     }
 }
 
@@ -52,57 +48,64 @@ public struct Swap: Codable {
     var free: Double
 }
 
+public struct Pressure: Codable {
+    let level: Int
+    let value: RAMPressure
+}
+
 public class RAM: Module {
     private let popupView: Popup
     private let settingsView: Settings
     private let portalView: Portal
+    private let notificationsView: Notifications
     
     private var usageReader: UsageReader? = nil
     private var processReader: ProcessReader? = nil
     
-    private var notificationLevelState: Bool = false
-    private var notificationID: String? = nil
-    
     private var splitValueState: Bool {
         return Store.shared.bool(key: "\(self.config.name)_splitValue", defaultValue: false)
     }
-    private var notificationLevel: String {
-        return Store.shared.string(key: "\(self.config.name)_notificationLevel", defaultValue: "Disabled")
-    }
     private var appColor: NSColor {
-        let color = Color.secondBlue
+        let color = SColor.secondBlue
         let key = Store.shared.string(key: "\(self.config.name)_appColor", defaultValue: color.key)
-        if let c = Color.fromString(key).additional as? NSColor {
+        if let c = SColor.fromString(key).additional as? NSColor {
             return c
         }
         return color.additional as! NSColor
     }
     private var wiredColor: NSColor {
-        let color = Color.secondOrange
+        let color = SColor.secondOrange
         let key = Store.shared.string(key: "\(self.config.name)_wiredColor", defaultValue: color.key)
-        if let c = Color.fromString(key).additional as? NSColor {
+        if let c = SColor.fromString(key).additional as? NSColor {
             return c
         }
         return color.additional as! NSColor
     }
     private var compressedColor: NSColor {
-        let color = Color.pink
+        let color = SColor.pink
         let key = Store.shared.string(key: "\(self.config.name)_compressedColor", defaultValue: color.key)
-        if let c = Color.fromString(key).additional as? NSColor {
+        if let c = SColor.fromString(key).additional as? NSColor {
             return c
         }
         return color.additional as! NSColor
     }
     
+    private var textValue: String {
+        Store.shared.string(key: "\(self.name)_textWidgetValue", defaultValue: "$mem.used/$mem.total ($pressure.value)")
+    }
+    
     public init() {
-        self.settingsView = Settings("RAM")
-        self.popupView = Popup("RAM")
-        self.portalView = Portal("RAM")
+        self.settingsView = Settings(.RAM)
+        self.popupView = Popup(.RAM)
+        self.portalView = Portal(.RAM)
+        self.notificationsView = Notifications(.RAM)
         
         super.init(
+            moduleType: .RAM,
             popup: self.popupView,
             settings: self.settingsView,
-            portal: self.portalView
+            portal: self.portalView,
+            notifications: self.notificationsView
         )
         guard self.available else { return }
         
@@ -117,8 +120,14 @@ public class RAM: Module {
             self?.processReader?.setInterval(value)
         }
         
-        self.usageReader = UsageReader(.RAM)
-        self.processReader = ProcessReader(.RAM)
+        self.usageReader = UsageReader(.RAM) { [weak self] value in
+            self?.loadCallback(value)
+        }
+        self.processReader = ProcessReader(.RAM) { [weak self] value in
+            if let list = value {
+                self?.popupView.processCallback(list)
+            }
+        }
         
         self.settingsView.callbackWhenUpdateNumberOfProcesses = { [weak self] in
             self?.popupView.numberOfProcessesUpdated()
@@ -127,43 +136,25 @@ public class RAM: Module {
             }
         }
         
-        self.usageReader?.callbackHandler = { [weak self] value in
-            self?.loadCallback(value)
-        }
-        self.usageReader?.readyCallback = { [weak self] in
-            self?.readyHandler()
-        }
-        
-        self.processReader?.callbackHandler = { [weak self] value in
-            if let list = value {
-                self?.popupView.processCallback(list)
-            }
-        }
-        
-        if let reader = self.usageReader {
-            self.addReader(reader)
-        }
-        if let reader = self.processReader {
-            self.addReader(reader)
-        }
+        self.setReaders([self.usageReader, self.processReader])
     }
     
     private func loadCallback(_ raw: RAM_Usage?) {
-        guard raw != nil, let value = raw, self.enabled else { return }
+        guard let value = raw, self.enabled else { return }
         
         self.popupView.loadCallback(value)
-        self.portalView.loadCallback(value)
-        self.checkNotificationLevel(value.usage)
+        self.portalView.callback(value)
+        self.notificationsView.loadCallback(value)
         
         let total: Double = value.total == 0 ? 1 : value.total
-        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: Widget) in
+        self.menuBar.widgets.filter{ $0.isActive }.forEach { (w: SWidget) in
             switch w.item {
             case let widget as Mini:
                 widget.setValue(value.usage)
-                widget.setPressure(value.pressureLevel)
+                widget.setPressure(value.pressure.value)
             case let widget as LineChart:
                 widget.setValue(value.usage)
-                widget.setPressure(value.pressureLevel)
+                widget.setPressure(value.pressure.value)
             case let widget as BarChart:
                 if self.splitValueState {
                     widget.setValue([[
@@ -174,7 +165,7 @@ public class RAM: Module {
                 } else {
                     widget.setValue([[ColorValue(value.usage)]])
                     widget.setColorZones((0.8, 0.95))
-                    widget.setPressure(value.pressureLevel)
+                    widget.setPressure(value.pressure.value)
                 }
             case let widget as PieChart:
                 widget.setValue([
@@ -183,33 +174,69 @@ public class RAM: Module {
                     circle_segment(value: value.compressed/total, color: self.compressedColor)
                 ])
             case let widget as MemoryWidget:
-                let free = Units(bytes: Int64(value.free)).getReadableMemory()
-                let used = Units(bytes: Int64(value.used)).getReadableMemory()
-                widget.setValue((free, used))
+                let free = Units(bytes: Int64(value.free)).getReadableMemory(style: .memory)
+                let used = Units(bytes: Int64(value.used)).getReadableMemory(style: .memory)
+                widget.setValue((free, used), usedPercentage: value.usage)
+                widget.setPressure(value.pressure.value)
             case let widget as Tachometer:
                 widget.setValue([
                     circle_segment(value: value.app/total, color: self.appColor),
                     circle_segment(value: value.wired/total, color: self.wiredColor),
                     circle_segment(value: value.compressed/total, color: self.compressedColor)
                 ])
+            case let widget as TextWidget:
+                var text = "\(self.textValue)"
+                let pairs = TextWidget.parseText(text)
+                pairs.forEach { pair in
+                    var replacement: String? = nil
+                    
+                    switch pair.key {
+                    case "$mem":
+                        switch pair.value {
+                        case "total": replacement = Units(bytes: Int64(value.total)).getReadableMemory(style: .memory)
+                        case "used": replacement = Units(bytes: Int64(value.used)).getReadableMemory(style: .memory)
+                        case "free": replacement = Units(bytes: Int64(value.free)).getReadableMemory(style: .memory)
+                        case "active": replacement = Units(bytes: Int64(value.active)).getReadableMemory(style: .memory)
+                        case "inactive": replacement = Units(bytes: Int64(value.inactive)).getReadableMemory(style: .memory)
+                        case "wired": replacement = Units(bytes: Int64(value.wired)).getReadableMemory(style: .memory)
+                        case "compressed": replacement = Units(bytes: Int64(value.compressed)).getReadableMemory(style: .memory)
+                        case "app": replacement = Units(bytes: Int64(value.app)).getReadableMemory(style: .memory)
+                        case "cache": replacement = Units(bytes: Int64(value.cache)).getReadableMemory(style: .memory)
+                        case "swapins": replacement = "\(value.swapins)"
+                        case "swapouts": replacement = "\(value.swapouts)"
+                        default: return
+                        }
+                    case "$swap":
+                        switch pair.value {
+                        case "total": replacement = Units(bytes: Int64(value.swap.total)).getReadableMemory(style: .memory)
+                        case "used": replacement = Units(bytes: Int64(value.swap.used)).getReadableMemory(style: .memory)
+                        case "free": replacement = Units(bytes: Int64(value.swap.free)).getReadableMemory(style: .memory)
+                        default: return
+                        }
+                    case "$pressure":
+                        switch pair.value {
+                        case "level": replacement = "\(value.pressure.level)"
+                        case "value": replacement = value.pressure.value.rawValue
+                        default: return
+                        }
+                    default: return
+                    }
+                    
+                    if let replacement {
+                        let key = pair.value.isEmpty ? pair.key : "\(pair.key).\(pair.value)"
+                        text = text.replacingOccurrences(of: key, with: replacement)
+                    }
+                }
+                widget.setValue(text)
             default: break
             }
         }
-    }
-    
-    private func checkNotificationLevel(_ value: Double) {
-        guard self.notificationLevel != "Disabled", let level = Double(self.notificationLevel) else { return }
         
-        if let id = self.notificationID, value < level && self.notificationLevelState {
-            removeNotification(id)
-            self.notificationID = nil
-            self.notificationLevelState = false
-        } else if value >= level && !self.notificationLevelState {
-            self.notificationID = showNotification(
-                title: localizedString("RAM utilization threshold"),
-                subtitle: localizedString("RAM utilization is", "\(Int((value)*100))%")
-            )
-            self.notificationLevelState = true
+        if #available(macOS 11.0, *) {
+            guard let blobData = try? JSONEncoder().encode(value) else { return }
+            self.userDefaults?.set(blobData, forKey: "RAM@UsageReader")
+            WidgetCenter.shared.reloadTimelines(ofKind: RAM_entry.kind)
+            WidgetCenter.shared.reloadTimelines(ofKind: "UnitedWidget")
         }
     }
 }
