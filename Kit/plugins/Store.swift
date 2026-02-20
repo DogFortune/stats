@@ -46,7 +46,9 @@ public class Store {
     }
     
     public func exist(key: String) -> Bool {
-        return self.getValue(for: key, type: Any.self) != nil
+        return self.cacheQueue.sync {
+            self.cache.keys.contains(key) || self.defaults.object(forKey: key) != nil
+        }
     }
     
     public func remove(_ key: String) {
@@ -106,7 +108,7 @@ public class Store {
     public func export(to url: URL) {
         guard let id = Bundle.main.bundleIdentifier,
               var dictionary = self.defaults.persistentDomain(forName: id) else { return }
-        dictionary.removeValue(forKey: "telemetry_id")
+        dictionary.removeValue(forKey: "remote_id")
         dictionary.removeValue(forKey: "access_token")
         dictionary.removeValue(forKey: "refresh_token")
         NSDictionary(dictionary: dictionary).write(to: url, atomically: true)
@@ -116,7 +118,7 @@ public class Store {
         guard let id = Bundle.main.bundleIdentifier,
               let dict = NSDictionary(contentsOf: url) as? [String: Any] else { return }
         
-        let keysToPreserve = ["telemetry_id", "access_token", "refresh_token"]
+        let keysToPreserve = ["remote_id", "access_token", "refresh_token"]
         var importedDict = dict
         
         for key in keysToPreserve {

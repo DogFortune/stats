@@ -114,6 +114,10 @@ public class CPU: Module {
         return color.additional as! NSColor
     }
     
+    private var systemWidgetsUpdatesState: Bool {
+        self.userDefaults?.bool(forKey: "systemWidgetsUpdates_state") ?? false
+    }
+    
     public init() {
         self.settingsView = Settings(.CPU)
         self.popupView = Popup(.CPU)
@@ -233,10 +237,11 @@ public class CPU: Module {
             }
         }
         
-        if #available(macOS 11.0, *) {
-            if #unavailable(macOS 26.0) {
-                guard let blobData = try? JSONEncoder().encode(value) else { return }
-                self.userDefaults?.set(blobData, forKey: "CPU@LoadReader")
+        if self.systemWidgetsUpdatesState {
+            if #available(macOS 11.0, *) {
+                if isWidgetActive(self.userDefaults, [CPU_entry.kind, "UnitedWidget"]), let blobData = try? JSONEncoder().encode(value) {
+                    self.userDefaults?.set(blobData, forKey: "CPU@LoadReader")
+                }
                 WidgetCenter.shared.reloadTimelines(ofKind: CPU_entry.kind)
                 WidgetCenter.shared.reloadTimelines(ofKind: "UnitedWidget")
             }

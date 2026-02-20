@@ -223,32 +223,32 @@ public class BarChart: WidgetWrapper {
     }
     
     public func setValue(_ newValue: [[ColorValue]]) {
-        let tolerance: CGFloat = 0.01
-        let isDifferent = self._value.count != newValue.count || zip(self._value, newValue).contains { row1, row2 in
-            row1.count != row2.count || zip(row1, row2).contains { val1, val2 in
-                abs(val1.value - val2.value) > tolerance || val1.color != val2.color
-            }
-        }
-        guard isDifferent else { return }
-        self._value = newValue
         DispatchQueue.main.async(execute: {
-            self.display()
+            let tolerance: CGFloat = 0.01
+            let isDifferent = self._value.count != newValue.count || zip(self._value, newValue).contains { row1, row2 in
+                row1.count != row2.count || zip(row1, row2).contains { val1, val2 in
+                    abs(val1.value - val2.value) > tolerance || val1.color != val2.color
+                }
+            }
+            guard isDifferent else { return }
+            self._value = newValue
+            self.redraw()
         })
     }
     
     public func setPressure(_ newPressureLevel: RAMPressure) {
-        guard self._pressureLevel != newPressureLevel else { return }
-        self._pressureLevel = newPressureLevel
         DispatchQueue.main.async(execute: {
-            self.display()
+            guard self._pressureLevel != newPressureLevel else { return }
+            self._pressureLevel = newPressureLevel
+            self.redraw()
         })
     }
     
     public func setColorZones(_ newColorZones: colorZones) {
-        guard self._colorZones != newColorZones else { return }
-        self._colorZones = newColorZones
         DispatchQueue.main.async(execute: {
-            self.display()
+            guard self._colorZones != newColorZones else { return }
+            self._colorZones = newColorZones
+            self.redraw()
         })
     }
     
@@ -288,7 +288,7 @@ public class BarChart: WidgetWrapper {
     @objc private func toggleLabel(_ sender: NSControl) {
         self.labelState = controlState(sender)
         Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_label", value: self.labelState)
-        self.display()
+        self.redraw()
     }
     
     @objc private func toggleBox(_ sender: NSControl) {
@@ -301,7 +301,7 @@ public class BarChart: WidgetWrapper {
             Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_frame", value: self.frameState)
         }
         
-        self.display()
+        self.redraw()
     }
     
     @objc private func toggleFrame(_ sender: NSControl) {
@@ -314,7 +314,7 @@ public class BarChart: WidgetWrapper {
             Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_box", value: self.boxState)
         }
         
-        self.display()
+        self.redraw()
     }
     
     @objc private func toggleColor(_ sender: NSMenuItem) {
@@ -324,6 +324,6 @@ public class BarChart: WidgetWrapper {
         }
         
         Store.shared.set(key: "\(self.title)_\(self.type.rawValue)_color", value: key)
-        self.display()
+        self.redraw()
     }
 }

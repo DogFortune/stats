@@ -221,6 +221,10 @@ public class Disk: Module {
         Store.shared.string(key: "\(self.name)_textWidgetValue", defaultValue: "$capacity.free/$capacity.total")
     }
     
+    private var systemWidgetsUpdatesState: Bool {
+        self.userDefaults?.bool(forKey: "systemWidgetsUpdates_state") ?? false
+    }
+    
     public init() {
         super.init(
             moduleType: .disk,
@@ -245,6 +249,11 @@ public class Disk: Module {
             if let list = value {
                 self?.popupView.processCallback(list)
             }
+        }
+        
+        self.popupView.refreshCallback = { [weak self] uuid in
+            self?.capacityReader?.resetPurgableSpace(for: uuid)
+            self?.capacityReader?.read()
         }
         
         self.selectedDisk = Store.shared.string(key: "\(ModuleType.disk.stringValue)_disk", defaultValue: self.selectedDisk)
@@ -329,10 +338,11 @@ public class Disk: Module {
             }
         }
         
-        if #available(macOS 11.0, *) {
-            if #unavailable(macOS 26.0) {
-                guard let blobData = try? JSONEncoder().encode(d) else { return }
-                self.userDefaults?.set(blobData, forKey: "Disk@CapacityReader")
+        if self.systemWidgetsUpdatesState {
+            if #available(macOS 11.0, *) {
+                if isWidgetActive(self.userDefaults, [Disk_entry.kind, "UnitedWidget"]), let blobData = try? JSONEncoder().encode(d) {
+                    self.userDefaults?.set(blobData, forKey: "Disk@CapacityReader")
+                }
                 WidgetCenter.shared.reloadTimelines(ofKind: Disk_entry.kind)
                 WidgetCenter.shared.reloadTimelines(ofKind: "UnitedWidget")
             }

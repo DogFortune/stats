@@ -22,9 +22,11 @@ public enum Network_t: String, Codable {
 }
 
 public struct Network_interface: Codable {
+    var status: Bool = false
     var displayName: String = ""
     var BSDName: String = ""
     var address: String = ""
+    var transmitRate: Double = 0
 }
 
 public struct Network_addr: Codable {
@@ -39,7 +41,6 @@ public struct Network_wifi: Codable {
     var bssid: String? = nil
     var RSSI: Int? = nil
     var noise: Int? = nil
-    var transmitRate: Double? = nil
     
     var standard: String? = nil
     var mode: String? = nil
@@ -55,7 +56,6 @@ public struct Network_wifi: Codable {
         self.ssid = nil
         self.RSSI = nil
         self.noise = nil
-        self.transmitRate = nil
         self.standard = nil
         self.mode = nil
         self.security = nil
@@ -75,6 +75,8 @@ public struct Network_Usage: Codable, RemoteType {
     var laddr: Network_addr = Network_addr() // local ip
     var raddr: Network_addr = Network_addr() // remote ip
     
+    var dns: [String] = []
+    
     var interface: Network_interface? = nil
     var connectionType: Network_t? = nil
     var status: Bool = false
@@ -86,6 +88,8 @@ public struct Network_Usage: Codable, RemoteType {
         
         self.laddr = Network_addr()
         self.raddr = Network_addr()
+        
+        self.dns = []
         
         self.interface = nil
         self.connectionType = nil
@@ -103,6 +107,7 @@ public struct Network_Usage: Codable, RemoteType {
 public struct Network_Connectivity: Codable {
     var status: Bool = false
     var latency: Double = 0
+    var jitter: Double = 0
 }
 
 public struct Network_Process: Codable, Process_p {
@@ -156,6 +161,10 @@ public class Network: Module {
     }
     private var textValue: String {
         Store.shared.string(key: "\(self.name)_textWidgetValue", defaultValue: "$addr.public - $status")
+    }
+    
+    private var systemWidgetsUpdatesState: Bool {
+        self.userDefaults?.bool(forKey: "systemWidgetsUpdates_state") ?? false
     }
     
     public init() {
@@ -273,6 +282,7 @@ public class Network: Module {
                         case "displayName": replacement = value.interface?.displayName ?? "-"
                         case "BSDName": replacement = value.interface?.BSDName ?? "-"
                         case "address": replacement = value.interface?.address ?? "-"
+                        case "transmitRate": replacement = "\(value.interface?.transmitRate ?? 0)"
                         default: return
                         }
                     case "$wifi":
@@ -281,7 +291,6 @@ public class Network: Module {
                         case "bssid": replacement = value.wifiDetails.bssid ?? "-"
                         case "RSSI": replacement = "\(value.wifiDetails.RSSI ?? 0)"
                         case "noise": replacement = "\(value.wifiDetails.noise ?? 0)"
-                        case "transmitRate": replacement = "\(value.wifiDetails.transmitRate ?? 0)"
                         case "standard": replacement = value.wifiDetails.standard ?? "-"
                         case "mode": replacement = value.wifiDetails.mode ?? "-"
                         case "security": replacement = value.wifiDetails.security ?? "-"
@@ -325,10 +334,11 @@ public class Network: Module {
             }
         }
         
-        if #available(macOS 11.0, *) {
-            if #unavailable(macOS 26.0) {
-                guard let blobData = try? JSONEncoder().encode(raw) else { return }
-                self.userDefaults?.set(blobData, forKey: "Network@UsageReader")
+        if self.systemWidgetsUpdatesState {
+            if #available(macOS 11.0, *) {
+                if isWidgetActive(self.userDefaults, [Network_entry.kind]), let blobData = try? JSONEncoder().encode(raw) {
+                    self.userDefaults?.set(blobData, forKey: "Network@UsageReader")
+                }
                 WidgetCenter.shared.reloadTimelines(ofKind: Network_entry.kind)
             }
         }

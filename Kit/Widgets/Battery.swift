@@ -174,7 +174,7 @@ public class BatteryWidget: WidgetWrapper {
         batteryPointSeparator.line(to: CGPoint(x: bPX, y: batteryFrame.bounds.origin.y + batteryFrame.bounds.height))
         ctx.saveGState()
         ctx.setBlendMode(.destinationOut)
-        NSColor.textColor.set()
+        NSColor.white.set()
         batteryPointSeparator.lineWidth = borderWidth
         batteryPointSeparator.stroke()
         ctx.restoreGState()
@@ -407,6 +407,7 @@ public class BatteryWidget: WidgetWrapper {
         }
         
         if updated {
+            self.needsDisplay = true
             DispatchQueue.main.async(execute: {
                 self.display()
             })
@@ -623,6 +624,7 @@ public class BatteryDetailsWidget: WidgetWrapper {
         }
         
         if updated {
+            self.needsDisplay = true
             DispatchQueue.main.async(execute: {
                 self.display()
             })

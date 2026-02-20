@@ -234,6 +234,17 @@ internal class UsageReader: Reader<Network_Usage>, CWEventDelegate {
             if String(cString: pointer.pointee.ifa_name) != self.interfaceID {
                 continue
             }
+            self.usage.interface?.status = (pointer.pointee.ifa_flags & UInt32(IFF_UP)) != 0
+            
+            if let raw = pointer.pointee.ifa_data {
+                let dataPtr = raw.assumingMemoryBound(to: if_data.self)
+                let ifData = dataPtr.pointee
+                let baud = UInt64(ifData.ifi_baudrate)
+                if baud > 0 {
+                    self.usage.interface?.transmitRate = Double(baud) / 1_000_000.0
+                }
+            }
+            
             self.getLocalIP(pointer)
             
             if let info = self.getBytesInfo(pointer) {
@@ -330,6 +341,18 @@ internal class UsageReader: Reader<Network_Usage>, CWEventDelegate {
             }
         }
         
+        if let prefs = SCPreferencesCreate(nil, "Stats" as CFString, nil), let services = SCNetworkServiceCopyAll(prefs) as? [SCNetworkService] {
+            for service in services {
+                if let interface = SCNetworkServiceGetInterface(service), let name = SCNetworkInterfaceGetBSDName(interface), name as String == self.interfaceID,
+                   let serviceID = SCNetworkServiceGetServiceID(service) {
+                    let key = "State:/Network/Service/\(serviceID)/DNS" as CFString
+                    if let settings = SCDynamicStoreCopyValue(nil, key) as? [String: Any] {
+                        self.usage.dns = settings["ServerAddresses"] as? [String] ?? []
+                    }
+                }
+            }
+        }
+        
         guard self.usage.interface != nil else { return }
         
         if self.usage.wifiDetails.ssid != nil && (self.usage.wifiDetails.ssid == "" || self.usage.wifiDetails.ssid == "<redacted>") {
@@ -360,7 +383,6 @@ internal class UsageReader: Reader<Network_Usage>, CWEventDelegate {
             
             self.usage.wifiDetails.RSSI = interface.rssiValue()
             self.usage.wifiDetails.noise = interface.noiseMeasurement()
-            self.usage.wifiDetails.transmitRate = interface.transmitRate()
             
             self.usage.wifiDetails.standard = interface.activePHYMode().description
             self.usage.wifiDetails.mode = interface.interfaceMode().description
@@ -505,8 +527,28 @@ internal class UsageReader: Reader<Network_Usage>, CWEventDelegate {
         }
     }
     
-    func ssidDidChangeForWiFiInterface(withName interfaceName: String) {
+    public func ssidDidChangeForWiFiInterface(withName interfaceName: String) {
         self.getWiFiDetails()
+    }
+    
+    private func isInterfaceUp(_ ifName: String) -> Bool {
+        var addrs: UnsafeMutablePointer<ifaddrs>? = nil
+        guard getifaddrs(&addrs) == 0, let first = addrs else { return false }
+        defer { freeifaddrs(addrs) }
+        
+        var ptr = first
+        while true {
+            let name = String(cString: ptr.pointee.ifa_name)
+            if name == ifName {
+                return (ptr.pointee.ifa_flags & UInt32(IFF_UP)) != 0
+            }
+            if let next = ptr.pointee.ifa_next {
+                ptr = next
+            } else {
+                break
+            }
+        }
+        return false
     }
 }
 
@@ -700,6 +742,18 @@ internal class ConnectivityReader: Reader<Network_Connectivity> {
         set { self.variablesQueue.sync { self._latency = newValue } }
     }
     
+    private var _previousLatency: Double? = nil
+    private var previousLatency: Double? {
+        get { self.variablesQueue.sync { self._previousLatency } }
+        set { self.variablesQueue.sync { self._previousLatency = newValue } }
+    }
+    
+    private var _jitter: Double? = nil
+    private var jitter: Double? {
+        get { self.variablesQueue.sync { self._jitter } }
+        set { self.variablesQueue.sync { self._jitter = newValue } }
+    }
+    
     var start: DispatchTime? = nil
     
     private struct ICMPHeader {
@@ -775,6 +829,9 @@ internal class ConnectivityReader: Reader<Network_Connectivity> {
             if let l = self.latency {
                 self.wrapper.latency = l
             }
+            if let j = self.jitter {
+                self.wrapper.jitter = j
+            }
             self.callback(self.wrapper)
         }
     }
@@ -789,6 +846,17 @@ internal class ConnectivityReader: Reader<Network_Connectivity> {
         let end = DispatchTime.now()
         
         self.latency = Double(end.uptimeNanoseconds - (self.start?.uptimeNanoseconds ?? 0)) / 1_000_000
+        
+        if let prev = self.previousLatency {
+            let d = abs((self.latency ?? 0) - prev)
+            if self.jitter == nil {
+                self.jitter = d
+            } else {
+                self.jitter! += (d - self.jitter!) / 16.0
+            }
+        }
+        self.previousLatency = self.latency
+        
         self.status = error == nil
         self.isPinging = false
         self.timeoutTimer?.invalidate()

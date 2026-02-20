@@ -113,9 +113,9 @@ internal class LoadReader: Reader<CPU_Load> {
         let niceDiff = Double(cpuInfo!.cpu_ticks.3 - self.previousInfo.cpu_ticks.3)
         let totalTicks = sysDiff + userDiff + niceDiff + idleDiff
         
-        let system = sysDiff  / totalTicks
-        let user = userDiff  / totalTicks
-        let idle = idleDiff  / totalTicks
+        let system = sysDiff / totalTicks
+        let user = userDiff / totalTicks
+        let idle = idleDiff / totalTicks
         
         if !system.isNaN {
             self.response.systemLoad  = system
@@ -130,17 +130,17 @@ internal class LoadReader: Reader<CPU_Load> {
         self.response.totalUsage = self.response.systemLoad + self.response.userLoad
         
         if let cores = self.cores {
-            let eCoresList: [Double] = cores.filter({ $0.type == .efficiency }).compactMap { (c: core_s) in
+            let eCoresList: [Double] = cores.filter({ $0.type == .efficiency }).enumerated().compactMap { (i, c) -> Double? in
                 if self.response.usagePerCore.indices.contains(Int(c.id)) {
                     return self.response.usagePerCore[Int(c.id)]
                 }
-                return 0
+                return i < usagePerCore.count ? usagePerCore[i] : 0
             }
-            let pCoresList: [Double] = cores.filter({ $0.type == .performance }).compactMap { (c: core_s) in
+            let pCoresList: [Double] = cores.filter({ $0.type == .performance }).enumerated().compactMap { (i, c) -> Double? in
                 if self.response.usagePerCore.indices.contains(Int(c.id)) {
                     return self.response.usagePerCore[Int(c.id)]
                 }
-                return 0
+                return i < usagePerCore.count ? usagePerCore[i] : 0
             }
             
             self.response.usageECores = eCoresList.reduce(0, +)/Double(eCoresList.count)

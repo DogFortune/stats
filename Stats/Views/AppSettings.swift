@@ -39,9 +39,19 @@ class ApplicationSettings: NSStackView {
         set { Store.shared.set(key: "CombinedModules_popup", value: newValue) }
     }
     
+    private var systemWidgetsUpdatesState: Bool {
+        get {
+            let userDefaults = UserDefaults(suiteName: "\(Bundle.main.object(forInfoDictionaryKey: "TeamId") as! String).eu.exelban.Stats.widgets")
+            return userDefaults?.bool(forKey: "systemWidgetsUpdates_state") ?? false
+        }
+        set {
+            let userDefaults = UserDefaults(suiteName: "\(Bundle.main.object(forInfoDictionaryKey: "TeamId") as! String).eu.exelban.Stats.widgets")
+            userDefaults?.set(newValue, forKey: "systemWidgetsUpdates_state")
+        }
+    }
+    
     private var updateSelector: NSPopUpButton?
     private var startAtLoginBtn: NSSwitch?
-    private var telemetryBtn: NSSwitch?
     private var remoteControlBtn: NSSwitch?
     
     private var combinedModulesView: PreferencesSection?
@@ -83,10 +93,6 @@ class ApplicationSettings: NSStackView {
             action: #selector(self.toggleLaunchAtLogin),
             state: LaunchAtLogin.isEnabled
         )
-        self.telemetryBtn = switchView(
-            action: #selector(self.toggleTelemetry),
-            state: Telemetry.shared.isEnabled
-        )
         
         scrollView.stackView.addArrangedSubview(PreferencesSection([
             PreferencesRow(localizedString("Check for updates"), component: self.updateSelector!),
@@ -99,8 +105,14 @@ class ApplicationSettings: NSStackView {
                 action: #selector(self.toggleDock),
                 state: Store.shared.bool(key: "dockIcon", defaultValue: false)
             )),
-            PreferencesRow(localizedString("Start at login"), component: self.startAtLoginBtn!),
-            PreferencesRow(localizedString("Share anonymous telemetry"), component: self.telemetryBtn!)
+            PreferencesRow(localizedString("Start at login"), component: self.startAtLoginBtn!)
+        ]))
+        
+        scrollView.stackView.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("macOS widgets"), component: switchView(
+                action: #selector(self.toggleSystemWidgetsUpdatesState),
+                state: self.systemWidgetsUpdatesState
+            ))
         ]))
         
         self.combinedModulesView = PreferencesSection([
@@ -205,7 +217,6 @@ class ApplicationSettings: NSStackView {
     
     internal func viewWillAppear() {
         self.startAtLoginBtn?.state = LaunchAtLogin.isEnabled ? .on : .off
-        self.telemetryBtn?.state = Telemetry.shared.isEnabled ? .on : .off
         self.remoteControlBtn?.state = Remote.shared.control ? .on : .off
         
         var idx = self.updateSelector?.indexOfSelectedItem ?? 0
@@ -317,10 +328,6 @@ class ApplicationSettings: NSStackView {
         if !Store.shared.exist(key: "runAtLoginInitialized") {
             Store.shared.set(key: "runAtLoginInitialized", value: true)
         }
-    }
-    
-    @objc private func toggleTelemetry(_ sender: NSButton) {
-        Telemetry.shared.isEnabled = sender.state == NSControl.StateValue.on
     }
     
     @objc private func toggleCombinedModules(_ sender: NSButton) {
@@ -480,6 +487,10 @@ class ApplicationSettings: NSStackView {
                 self.remoteView?.setRowVisibility(4, newState: false)
             }
         }
+    }
+    
+    @objc private func toggleSystemWidgetsUpdatesState(_ sender: NSButton) {
+        self.systemWidgetsUpdatesState = sender.state == NSControl.StateValue.on
     }
 }
 

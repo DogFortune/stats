@@ -198,7 +198,7 @@ public class ProcessView: NSStackView {
         
         for _ in 0..<n {
             let view: ValueField = ValueField()
-            view.widthAnchor.constraint(equalToConstant: 60).isActive = true
+            view.widthAnchor.constraint(equalToConstant: 68).isActive = true
             if n != 1 {
                 view.font = NSFont.systemFont(ofSize: 10, weight: .regular)
             }
@@ -265,7 +265,9 @@ public class ProcessView: NSStackView {
     
     @objc private func kill() {
         if let pid = self.pid {
-            asyncShell("kill \(pid)")
+            _ = syncShell("kill -9 \(pid)")
+            self.clear()
+            self.setLock(false)
         }
     }
 }
